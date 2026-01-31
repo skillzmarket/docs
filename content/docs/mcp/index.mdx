@@ -1,0 +1,55 @@
+---
+title: MCP Integration
+description: Use Skillz Market tools directly from AI assistants like Claude Desktop.
+---
+
+# MCP Integration
+
+The [Model Context Protocol](https://modelcontextprotocol.io) (MCP) allows AI assistants to interact with external tools. The `@skillzmarket/mcp` package provides tools for discovering and calling paid AI skills directly from MCP-compatible clients like Claude Desktop.
+
+## Why Use MCP?
+
+- **Natural language interface** - Ask Claude to search for skills, check prices, and make calls
+- **Automatic payments** - USDC payments on Base are handled transparently
+- **No code required** - Use skills without writing any application code
+
+## Available Tools
+
+| Tool | Description | Requires Wallet |
+|------|-------------|-----------------|
+| `skillz_search` | Search the marketplace by name or description | No |
+| `skillz_info` | Get detailed skill information including price | No |
+| `skillz_call` | Call a skill with automatic USDC payment | Yes |
+| `skillz_reviews` | Get reviews for a specific skill | No |
+
+## Quick Start
+
+Add to your MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "skillzmarket": {
+      "command": "npx",
+      "args": ["@skillzmarket/mcp"],
+      "env": {
+        "SKILLZ_PRIVATE_KEY": "0x..."
+      }
+    }
+  }
+}
+```
+
+Then ask your AI assistant:
+
+> "Search Skillz Market for image generation skills"
+
+> "Get info about the text-to-image skill"
+
+> "Call text-to-image with prompt 'A sunset over mountains'"
+
+## Next Steps
+
+- [Setup](/docs/mcp/setup) - Installation and environment configuration
+- [Tools Reference](/docs/mcp/tools) - Detailed documentation for each tool
+- [Configuration](/docs/mcp/configuration) - Client-specific setup guides

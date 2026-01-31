@@ -1,0 +1,200 @@
+---
+title: Tools Reference
+description: Complete reference for all Skillz Market MCP tools.
+---
+
+# Tools Reference
+
+This page documents all tools provided by the `@skillzmarket/mcp` server.
+
+## skillz_search
+
+Search the Skillz Market for skills by name or description.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Search query"
+    },
+    "category": {
+      "type": "string",
+      "description": "Filter by category (optional)"
+    }
+  },
+  "required": ["query"]
+}
+```
+
+### Example
+
+**Prompt:** "Search Skillz Market for image generation skills"
+
+**Response:**
+```json
+[
+  {
+    "slug": "text-to-image",
+    "name": "Text to Image",
+    "description": "Generate images from text prompts",
+    "price": "0.01",
+    "currency": "USDC"
+  }
+]
+```
+
+---
+
+## skillz_info
+
+Get detailed information about a specific skill including price, endpoint, and input/output schemas.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "slug": {
+      "type": "string",
+      "description": "Skill slug (unique identifier)"
+    }
+  },
+  "required": ["slug"]
+}
+```
+
+### Example
+
+**Prompt:** "Get info about the text-to-image skill"
+
+**Response:**
+```json
+{
+  "id": "abc123",
+  "slug": "text-to-image",
+  "name": "Text to Image",
+  "description": "Generate images from text prompts using DALL-E",
+  "price": "0.01",
+  "currency": "USDC",
+  "endpoint": "https://example.com/api/text-to-image",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "prompt": { "type": "string" },
+      "style": { "type": "string" }
+    },
+    "required": ["prompt"]
+  },
+  "paymentAddress": "0x...",
+  "isActive": true
+}
+```
+
+---
+
+## skillz_call
+
+Call a skill with automatic USDC payment on Base network.
+
+**Requires:** Configured wallet via `SKILLZ_PRIVATE_KEY`
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "slug": {
+      "type": "string",
+      "description": "Skill slug"
+    },
+    "input": {
+      "type": "object",
+      "description": "Input data for the skill"
+    }
+  },
+  "required": ["slug", "input"]
+}
+```
+
+### Example
+
+**Prompt:** "Call text-to-image with prompt 'A cyberpunk cityscape at night'"
+
+**Response:**
+```json
+{
+  "imageUrl": "https://example.com/generated/abc123.png",
+  "prompt": "A cyberpunk cityscape at night"
+}
+```
+
+### Payment Flow
+
+1. The tool fetches skill info to get the price
+2. Creates a USDC transfer on Base network
+3. Signs and submits the transaction
+4. Includes payment proof in the skill request
+5. Returns the skill result
+
+### Error Handling
+
+If no wallet is configured:
+```
+Error: No wallet configured. Set SKILLZ_PRIVATE_KEY environment variable.
+```
+
+If the call fails:
+```
+Error calling skill: [error message]
+```
+
+---
+
+## skillz_reviews
+
+Get reviews for a specific skill.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "slug": {
+      "type": "string",
+      "description": "Skill slug"
+    }
+  },
+  "required": ["slug"]
+}
+```
+
+### Example
+
+**Prompt:** "Get reviews for text-to-image"
+
+**Response:**
+```json
+[
+  {
+    "score": 90,
+    "comment": "Amazing image quality!",
+    "createdAt": "2025-01-15T10:30:00Z"
+  },
+  {
+    "score": 85,
+    "comment": "Fast and reliable",
+    "createdAt": "2025-01-14T15:20:00Z"
+  }
+]
+```
+
+## Next Steps
+
+- [Configuration](/docs/mcp/configuration) - Client-specific setup guides

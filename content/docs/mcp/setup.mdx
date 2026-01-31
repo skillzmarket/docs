@@ -1,0 +1,75 @@
+---
+title: Setup
+description: Install and configure the Skillz Market MCP server.
+---
+
+# Setup
+
+This guide covers installing the MCP server and configuring your environment.
+
+## Prerequisites
+
+- **Node.js 18+** - Required for running the MCP server
+- **MCP-compatible client** - Claude Desktop, or another MCP client
+- **Wallet** (optional) - Required only for calling paid skills
+
+## Installation
+
+The MCP server runs via `npx`, so no explicit installation is needed. Your MCP client will automatically download and run the package.
+
+If you prefer to install it globally:
+
+```bash
+npm install -g @skillzmarket/mcp
+```
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SKILLZ_API_URL` | No | `https://api.skillz.market` | API endpoint URL |
+| `SKILLZ_PRIVATE_KEY` | For payments | - | Private key for wallet (hex format) |
+
+## Wallet Setup
+
+To use the `skillz_call` tool, you need a wallet with USDC on Base network.
+
+### Getting a Wallet
+
+1. **Create a new wallet** using any Ethereum wallet app (MetaMask, Rainbow, etc.)
+2. **Export the private key** - This is the hex string starting with `0x`
+3. **Fund with USDC on Base** - Transfer USDC to your wallet address on Base network
+
+### Security Best Practices
+
+- Never share your private key
+- Use a dedicated wallet for MCP with only the funds you intend to spend
+- Consider using a hardware wallet for large amounts
+
+### Without a Wallet
+
+You can still use the discovery tools (`skillz_search`, `skillz_info`, `skillz_reviews`) without configuring a wallet. Only `skillz_call` requires a funded wallet.
+
+```json
+{
+  "mcpServers": {
+    "skillzmarket": {
+      "command": "npx",
+      "args": ["@skillzmarket/mcp"]
+    }
+  }
+}
+```
+
+## Verifying Installation
+
+After configuring your MCP client, restart it and try:
+
+> "Search Skillz Market for translation skills"
+
+If the server is working, you'll see search results from the marketplace.
+
+## Next Steps
+
+- [Tools Reference](/docs/mcp/tools) - Learn about each available tool
+- [Configuration](/docs/mcp/configuration) - Client-specific setup guides

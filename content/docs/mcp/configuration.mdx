@@ -1,0 +1,144 @@
+---
+title: Configuration
+description: Configure MCP clients to use Skillz Market tools.
+---
+
+# Configuration
+
+This guide covers how to configure various MCP clients to use Skillz Market tools.
+
+## Claude Desktop
+
+Claude Desktop is the primary MCP client from Anthropic.
+
+### Config File Location
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+
+### Full Configuration (with wallet)
+
+```json
+{
+  "mcpServers": {
+    "skillzmarket": {
+      "command": "npx",
+      "args": ["@skillzmarket/mcp"],
+      "env": {
+        "SKILLZ_API_URL": "https://api.skillz.market",
+        "SKILLZ_PRIVATE_KEY": "0x..."
+      }
+    }
+  }
+}
+```
+
+### Discovery Only (no wallet)
+
+If you only want to search and browse skills without making payments:
+
+```json
+{
+  "mcpServers": {
+    "skillzmarket": {
+      "command": "npx",
+      "args": ["@skillzmarket/mcp"]
+    }
+  }
+}
+```
+
+### Multiple MCP Servers
+
+You can run Skillz Market alongside other MCP servers:
+
+```json
+{
+  "mcpServers": {
+    "skillzmarket": {
+      "command": "npx",
+      "args": ["@skillzmarket/mcp"],
+      "env": {
+        "SKILLZ_PRIVATE_KEY": "0x..."
+      }
+    },
+    "another-server": {
+      "command": "npx",
+      "args": ["another-mcp-package"]
+    }
+  }
+}
+```
+
+## Other MCP Clients
+
+The Skillz Market MCP server follows the standard MCP protocol and should work with any compatible client.
+
+### Generic Configuration
+
+Most MCP clients accept a configuration similar to:
+
+```json
+{
+  "command": "npx",
+  "args": ["@skillzmarket/mcp"],
+  "env": {
+    "SKILLZ_API_URL": "https://api.skillz.market",
+    "SKILLZ_PRIVATE_KEY": "0x..."
+  }
+}
+```
+
+### Using with npm
+
+If you prefer not to use npx:
+
+```bash
+npm install -g @skillzmarket/mcp
+```
+
+Then configure with the global binary:
+
+```json
+{
+  "command": "skillzmarket-mcp",
+  "args": [],
+  "env": {
+    "SKILLZ_PRIVATE_KEY": "0x..."
+  }
+}
+```
+
+## Environment Variables Reference
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SKILLZ_API_URL` | API endpoint | `https://api.skillz.market` |
+| `SKILLZ_PRIVATE_KEY` | Wallet private key (hex) | - |
+
+## Troubleshooting
+
+### Server Not Starting
+
+1. Ensure Node.js 18+ is installed: `node --version`
+2. Try running manually: `npx @skillzmarket/mcp`
+3. Check for error messages in the MCP client logs
+
+### Tools Not Appearing
+
+1. Restart your MCP client after configuration changes
+2. Verify the config file path is correct for your platform
+3. Check JSON syntax in the config file
+
+### Payment Errors
+
+1. Verify `SKILLZ_PRIVATE_KEY` is set correctly
+2. Ensure the wallet has USDC on Base network
+3. Check that the private key starts with `0x`
+
+## Next Steps
+
+- [Tools Reference](/docs/mcp/tools) - Detailed documentation for each tool
+- [Consumer API](/docs/consumer) - Use the SDK directly in your applications
