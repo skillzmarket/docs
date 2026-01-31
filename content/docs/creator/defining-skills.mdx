@@ -1,0 +1,188 @@
+---
+title: Defining Skills
+description: Learn how to define monetized skills with the skill() function.
+---
+
+# Defining Skills
+
+The `skill()` function creates a skill definition with pricing, metadata, and handler.
+
+## Basic Usage
+
+```typescript
+import { skill } from '@skillzmarket/sdk/creator';
+
+const mySkill = skill({
+  price: '$0.001',
+  description: 'What the skill does',
+}, async (input) => {
+  // Your logic here
+  return { result: 'something' };
+});
+```
+
+## Skill Options
+
+```typescript
+interface SkillOptions {
+  price: string;             // Required: price per call
+  description?: string;      // What the skill does
+  timeout?: number;          // Max execution time (ms)
+  inputSchema?: JsonSchema;  // JSON Schema for input
+  outputSchema?: JsonSchema; // JSON Schema for output
+}
+```
+
+### Price Format
+
+You can specify prices in multiple formats:
+
+| Format | Example | Result |
+|--------|---------|--------|
+| Dollar sign | `'$0.001'` | 0.001 USDC |
+| With currency | `'0.005 USDC'` | 0.005 USDC |
+| Plain number | `'0.01'` | 0.01 USDC |
+
+```typescript
+// All equivalent:
+skill({ price: '$0.001' }, handler);
+skill({ price: '0.001 USDC' }, handler);
+skill({ price: '0.001' }, handler);
+```
+
+### Timeout
+
+Set maximum execution time (default: 60 seconds, max: 5 minutes):
+
+```typescript
+const longRunning = skill({
+  price: '$0.01',
+  timeout: 120000, // 2 minutes
+}, async (input) => {
+  // Long-running operation
+});
+```
+
+### Input/Output Schemas
+
+Define JSON Schemas for validation and documentation:
+
+```typescript
+const summarize = skill({
+  price: '$0.005',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      text: { type: 'string' },
+      maxLength: { type: 'number' },
+    },
+    required: ['text'],
+  },
+  outputSchema: {
+    type: 'object',
+    properties: {
+      summary: { type: 'string' },
+      wordCount: { type: 'number' },
+    },
+  },
+}, async ({ text, maxLength }) => {
+  const summary = text.slice(0, maxLength || 100);
+  return {
+    summary,
+    wordCount: summary.split(' ').length,
+  };
+});
+```
+
+## The Handler Function
+
+The handler is an async function that receives input and returns output:
+
+```typescript
+type SkillHandler<TInput, TOutput> = (input: TInput) => Promise<TOutput>;
+```
+
+### Type-Safe Handlers
+
+Use TypeScript for type safety:
+
+```typescript
+interface TranslateInput {
+  text: string;
+  targetLang: string;
+}
+
+interface TranslateOutput {
+  translated: string;
+  sourceDetected: string;
+}
+
+const translate = skill<TranslateInput, TranslateOutput>({
+  price: '$0.003',
+}, async ({ text, targetLang }) => {
+  // TypeScript knows the types
+  return {
+    translated: `[${targetLang}] ${text}`,
+    sourceDetected: 'en',
+  };
+});
+```
+
+### Error Handling
+
+Throw errors to return a 500 response:
+
+```typescript
+const validateAndProcess = skill({
+  price: '$0.001',
+}, async ({ data }) => {
+  if (!data) {
+    throw new Error('Data is required');
+  }
+
+  return { processed: data };
+});
+```
+
+In production (`NODE_ENV=production`), error messages are masked to prevent information disclosure.
+
+## Skill Definition Object
+
+The `skill()` function returns a `SkillDefinition`:
+
+```typescript
+interface SkillDefinition<TInput, TOutput> {
+  options: SkillOptions;
+  handler: SkillHandler<TInput, TOutput>;
+  parsedPrice: ParsedPrice;
+}
+
+interface ParsedPrice {
+  amount: string;    // e.g., '0.001'
+  currency: 'USDC';
+}
+```
+
+## Multiple Skills
+
+You can define multiple skills and serve them together:
+
+```typescript
+const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
+
+const reverse = skill({ price: '$0.001' }, async ({ text }: { text: string }) => ({
+  result: text.split('').reverse().join(''),
+}));
+
+const uppercase = skill({ price: '$0.0005' }, async ({ text }: { text: string }) => ({
+  result: text.toUpperCase(),
+}));
+
+// Pass all skills to serve()
+serve({ echo, reverse, uppercase });
+```
+
+## Next Steps
+
+- [Serving Skills](/docs/creator/serving-skills) - Configure and run your server
+- [Registration](/docs/creator/registration) - Register with the marketplace

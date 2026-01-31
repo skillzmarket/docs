@@ -1,0 +1,228 @@
+---
+title: serve() Function
+description: API reference for the serve() function to run a skill server.
+---
+
+# serve() Function
+
+Start an HTTP server with x402 payment protection for your skills.
+
+```typescript
+import { serve } from '@skillzmarket/sdk/creator';
+```
+
+## Signature
+
+```typescript
+function serve(
+  skills: SkillsMap,
+  options?: ServeOptions
+): Promise<void>
+```
+
+## Parameters
+
+### skills
+
+A map of skill names to their definitions:
+
+```typescript
+type SkillsMap = Record<string, SkillDefinition<any, any>>;
+```
+
+Each key becomes an endpoint: `POST /[skillName]`
+
+```typescript
+const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
+const upper = skill({ price: '$0.001' }, async ({ text }) => ({ result: text.toUpperCase() }));
+
+// Creates endpoints: POST /echo, POST /upper
+serve({ echo, upper });
+```
+
+### options
+
+```typescript
+interface ServeOptions {
+  port?: number;
+  wallet?: Hex;
+  network?: `${string}:${string}`;
+  facilitatorUrl?: string;
+  appName?: string;
+  onCall?: (skillName: string, input: unknown) => void;
+  onError?: (skillName: string, error: Error) => void;
+  register?: RegistrationOptions;
+  trackCalls?: boolean;
+  apiUrl?: string;
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `port` | `number` | `3002` | Server port |
+| `wallet` | `Hex` | `SKILLZ_WALLET_KEY` env | Wallet private key |
+| `network` | `string` | `'eip155:8453'` | Payment network |
+| `facilitatorUrl` | `string` | `'https://x402.dexter.cash'` | x402 facilitator |
+| `appName` | `string` | `'Skillz Market Skill'` | App name for payments |
+| `onCall` | `function` | - | Called on skill invocation |
+| `onError` | `function` | - | Called on skill error |
+| `register` | `RegistrationOptions` | - | Auto-registration config |
+| `trackCalls` | `boolean` | `true` | Enable analytics |
+| `apiUrl` | `string` | `'https://api.skillz.market'` | API URL for tracking |
+
+### RegistrationOptions
+
+```typescript
+interface RegistrationOptions {
+  apiUrl?: string;
+  endpoint: string;
+  enabled?: boolean;
+  onError?: 'throw' | 'warn' | 'silent';
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `apiUrl` | `string` | `'https://api.skillz.market'` | Registry API URL |
+| `endpoint` | `string` | Required | Your public server URL |
+| `enabled` | `boolean` | `true` | Enable registration |
+| `onError` | `string` | `'warn'` | Error handling mode |
+
+## Returns
+
+`Promise<void>` - Resolves when server is ready
+
+## Server Endpoints
+
+### GET /health
+
+Health check endpoint (not protected).
+
+```json
+{
+  "status": "ok",
+  "skills": ["echo", "upper"]
+}
+```
+
+### POST /[skillName]
+
+Skill endpoints (x402 protected).
+
+Without payment:
+```http
+HTTP/1.1 402 Payment Required
+```
+
+With valid payment:
+```json
+{
+  "success": true,
+  "result": { ... },
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+On error:
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+## Examples
+
+### Basic Server
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
+
+serve({ echo });
+```
+
+### With All Options
+
+```typescript
+serve({ echo, translate, summarize }, {
+  port: 8080,
+  network: 'eip155:8453',
+  appName: 'My AI Skills',
+  onCall: (name, input) => {
+    console.log(`${name} called with:`, input);
+  },
+  onError: (name, error) => {
+    console.error(`${name} failed:`, error.message);
+  },
+  register: {
+    endpoint: 'https://api.example.com',
+    enabled: true,
+    onError: 'warn',
+  },
+  trackCalls: true,
+});
+```
+
+### Production Setup
+
+```typescript
+serve(skills, {
+  port: parseInt(process.env.PORT || '3002'),
+  register: {
+    endpoint: process.env.PUBLIC_URL!,
+    enabled: process.env.NODE_ENV === 'production',
+  },
+  onError: (name, error) => {
+    // Send to error tracking
+    errorTracker.capture(error, { skill: name });
+  },
+});
+```
+
+## Wallet Resolution
+
+The wallet is resolved in this order:
+
+1. `options.wallet` parameter
+2. `SKILLZ_WALLET_KEY` environment variable
+
+```bash
+# Using environment variable
+SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+```
+
+```typescript
+// Using parameter (not recommended for production)
+serve({ echo }, {
+  wallet: '0x...',
+});
+```
+
+## Error Handling
+
+### Validation Errors
+
+```typescript
+// Throws: No skills provided
+serve({});
+
+// Throws: Wallet not found
+// (if neither wallet option nor env var is set)
+serve({ echo });
+```
+
+### Runtime Errors
+
+Errors thrown by skill handlers are caught and returned as 500 responses:
+
+```typescript
+const risky = skill({ price: '$0.01' }, async () => {
+  throw new Error('Something went wrong');
+});
+
+// Returns: { success: false, error: "Something went wrong" }
+// In production: { success: false, error: "Internal server error" }
+```

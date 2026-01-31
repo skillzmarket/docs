@@ -1,0 +1,227 @@
+---
+title: Serving Skills
+description: Configure and run your skill server with the serve() function.
+---
+
+# Serving Skills
+
+The `serve()` function starts an HTTP server with x402 payment protection.
+
+## Basic Usage
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
+
+serve({ echo });
+```
+
+Run with your wallet key:
+
+```bash
+SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+```
+
+## Serve Options
+
+```typescript
+interface ServeOptions {
+  port?: number;               // Default: 3002
+  wallet?: Hex;                // Or use SKILLZ_WALLET_KEY env
+  network?: string;            // Default: 'eip155:8453'
+  facilitatorUrl?: string;     // Default: 'https://x402.dexter.cash'
+  appName?: string;            // Default: 'Skillz Market Skill'
+  register?: RegistrationOptions;
+  onCall?: (name, input) => void;
+  onError?: (name, error) => void;
+  trackCalls?: boolean;        // Default: true
+  apiUrl?: string;             // Default: 'https://api.skillz.market'
+}
+```
+
+### Port Configuration
+
+```typescript
+serve({ echo }, {
+  port: 8080,  // Listen on port 8080
+});
+```
+
+### Wallet Configuration
+
+Pass the wallet directly or use the environment variable:
+
+```typescript
+// Option 1: Environment variable (recommended)
+// SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+serve({ echo });
+
+// Option 2: Pass directly (not recommended for production)
+serve({ echo }, {
+  wallet: '0x...',
+});
+```
+
+### Network Configuration
+
+Default is Base mainnet (`eip155:8453`):
+
+```typescript
+serve({ echo }, {
+  network: 'eip155:8453',  // Base mainnet
+});
+```
+
+## Callbacks
+
+### onCall
+
+Called when a skill is invoked:
+
+```typescript
+serve({ echo }, {
+  onCall: (skillName, input) => {
+    console.log(`Skill called: ${skillName}`);
+    console.log('Input:', input);
+  },
+});
+```
+
+### onError
+
+Called when a skill throws an error:
+
+```typescript
+serve({ echo }, {
+  onError: (skillName, error) => {
+    console.error(`Error in ${skillName}:`, error.message);
+    // Send to error tracking service
+  },
+});
+```
+
+## Server Endpoints
+
+When you serve skills, these endpoints are available:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check (returns skill names) |
+| `/[skillName]` | POST | Call a skill |
+
+### Health Check
+
+```bash
+curl http://localhost:3002/health
+# {"status":"ok","skills":["echo","uppercase"]}
+```
+
+### Skill Endpoints
+
+Each skill is available at `POST /[skillName]`:
+
+```bash
+curl -X POST http://localhost:3002/echo \
+  -H "Content-Type: application/json" \
+  -d '{"message": "hello"}'
+```
+
+Without payment, you'll get a `402 Payment Required` response with x402 details.
+
+## Response Format
+
+Skill responses follow this format:
+
+```typescript
+// Success
+{
+  "success": true,
+  "result": { /* your handler's return value */ },
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+
+// Error
+{
+  "success": false,
+  "error": "Error message",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+## Analytics Tracking
+
+By default, skill calls are tracked for analytics:
+
+```typescript
+serve({ echo }, {
+  trackCalls: true,  // Default
+  apiUrl: 'https://api.skillz.market',
+});
+
+// Disable tracking
+serve({ echo }, {
+  trackCalls: false,
+});
+```
+
+## Auto-Registration
+
+Enable automatic registration with the marketplace:
+
+```typescript
+serve({ echo }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+    onError: 'warn',  // 'throw' | 'warn' | 'silent'
+  },
+});
+```
+
+See [Registration](/docs/creator/registration) for details.
+
+## Example: Production Setup
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+// Define skills
+const summarize = skill({
+  price: '$0.005',
+  description: 'AI-powered text summarization',
+  timeout: 30000,
+}, async ({ text }) => {
+  // Your AI logic
+  return { summary: '...' };
+});
+
+const translate = skill({
+  price: '$0.003',
+  description: 'Multi-language translation',
+}, async ({ text, target }) => {
+  // Your translation logic
+  return { translated: '...' };
+});
+
+// Serve with production settings
+serve({ summarize, translate }, {
+  port: process.env.PORT ? parseInt(process.env.PORT) : 3002,
+  register: {
+    endpoint: process.env.PUBLIC_URL || 'https://your-server.com',
+    enabled: process.env.NODE_ENV === 'production',
+    onError: 'warn',
+  },
+  onCall: (name, input) => {
+    console.log(`[${new Date().toISOString()}] ${name} called`);
+  },
+  onError: (name, error) => {
+    console.error(`[${new Date().toISOString()}] ${name} error:`, error);
+  },
+});
+```
+
+## Next Steps
+
+- [Registration](/docs/creator/registration) - Register for marketplace discovery
+- [x402 Payments](/docs/concepts/x402-payments) - Understand the payment flow

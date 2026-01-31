@@ -1,0 +1,125 @@
+---
+title: Quick Start
+description: Get up and running with the Skillz Market SDK in 5 minutes.
+---
+
+# Quick Start
+
+This guide will get you calling or creating paid AI skills in just a few minutes.
+
+## Consumer: Call Paid Skills
+
+If you want to **use** paid skills from the marketplace:
+
+### 1. Install the SDK
+
+```bash
+pnpm add @skillzmarket/sdk viem
+```
+
+### 2. Initialize with Your Wallet
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket({
+  wallet: process.env.WALLET_KEY, // Your private key
+});
+```
+
+### 3. Discover and Call Skills
+
+```typescript
+// Search for skills
+const skills = await market.search('image generation');
+console.log(skills);
+
+// Get skill details
+const skill = await market.info('text-to-image');
+console.log(`${skill.name} - ${skill.price} ${skill.currency}`);
+
+// Call the skill (payment handled automatically)
+const result = await market.call('text-to-image', {
+  prompt: 'A cyberpunk cityscape at night',
+});
+console.log(result);
+```
+
+That's it! The SDK automatically handles the x402 payment flow.
+
+---
+
+## Creator: Monetize Your Skills
+
+If you want to **create** and monetize your own AI skills:
+
+### 1. Install the SDK
+
+```bash
+pnpm add @skillzmarket/sdk viem
+```
+
+### 2. Define Your Skills
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+// Define a simple skill
+const echo = skill({
+  price: '$0.001',
+  description: 'Echoes input back',
+}, async (input) => {
+  return { echo: input };
+});
+
+// Define another skill
+const uppercase = skill({
+  price: '$0.0005',
+  description: 'Converts text to uppercase',
+}, async ({ text }: { text: string }) => {
+  return { result: text.toUpperCase() };
+});
+```
+
+### 3. Serve Your Skills
+
+```typescript
+serve({ echo, uppercase });
+```
+
+### 4. Run Your Server
+
+```bash
+SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+```
+
+Your skills are now live and accepting payments!
+
+---
+
+## What Happens Under the Hood
+
+### For Consumers
+
+1. You call `market.call('skill-slug', input)`
+2. SDK fetches skill info (endpoint, price)
+3. SDK calls the skill endpoint
+4. Endpoint returns `402 Payment Required`
+5. SDK creates USDC payment on Base
+6. SDK retries with payment proof
+7. Skill executes and returns result
+
+### For Creators
+
+1. You define skills with `skill(options, handler)`
+2. You serve them with `serve(skills)`
+3. Server starts with x402 payment middleware
+4. When called, middleware validates payment
+5. Your handler executes
+6. Result is returned to consumer
+
+## Next Steps
+
+- [Consumer Guide](/docs/consumer) - Full consumer API documentation
+- [Creator Guide](/docs/creator) - Full creator API documentation
+- [x402 Payments](/docs/concepts/x402-payments) - Understand the payment flow

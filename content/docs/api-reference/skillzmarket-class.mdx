@@ -1,0 +1,266 @@
+---
+title: SkillzMarket Class
+description: API reference for the SkillzMarket consumer client.
+---
+
+# SkillzMarket Class
+
+The main client for discovering and calling paid skills.
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+```
+
+## Constructor
+
+```typescript
+new SkillzMarket(options?: SkillzMarketOptions)
+```
+
+### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `SkillzMarketOptions` | Configuration options |
+
+### SkillzMarketOptions
+
+```typescript
+interface SkillzMarketOptions {
+  apiUrl?: string;
+  wallet?: WalletConfig;
+  network?: `${string}:${string}`;
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `apiUrl` | `string` | `'https://api.skillz.market'` | API endpoint URL |
+| `wallet` | `WalletConfig` | - | Wallet for payments |
+| `network` | `string` | `'eip155:8453'` | Network for payments |
+
+### WalletConfig
+
+```typescript
+type WalletConfig = PrivateKeyAccount | Hex;
+```
+
+Can be either:
+- A viem `PrivateKeyAccount` (from `privateKeyToAccount`)
+- A hex private key string (e.g., `'0x...'`)
+
+---
+
+## Methods
+
+### search()
+
+Search for skills by keyword.
+
+```typescript
+search(query: string, filters?: SearchFilters): Promise<Skill[]>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `query` | `string` | Search query |
+| `filters` | `SearchFilters` | Optional filters |
+
+#### SearchFilters
+
+```typescript
+interface SearchFilters {
+  category?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  creator?: string;
+}
+```
+
+#### Returns
+
+`Promise<Skill[]>` - Array of matching skills
+
+#### Example
+
+```typescript
+const skills = await market.search('image generation', {
+  minPrice: '0.001',
+  maxPrice: '0.01',
+});
+```
+
+---
+
+### info()
+
+Get detailed information about a skill.
+
+```typescript
+info(slug: string): Promise<Skill>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `slug` | `string` | Skill slug identifier |
+
+#### Returns
+
+`Promise<Skill>` - Skill details
+
+#### Example
+
+```typescript
+const skill = await market.info('text-to-image');
+console.log(skill.price, skill.currency);
+```
+
+---
+
+### call()
+
+Call a skill with automatic payment.
+
+```typescript
+call<T = unknown>(slug: string, input: Record<string, unknown>): Promise<T>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `slug` | `string` | Skill slug identifier |
+| `input` | `Record<string, unknown>` | Input data for the skill |
+
+#### Returns
+
+`Promise<T>` - Skill result
+
+#### Throws
+
+- `Error('Wallet required for calling paid skills')` - If no wallet configured
+- `Error('Skill [slug] is not active')` - If skill is disabled
+- `Error('Skill call failed: ...')` - If skill returns an error
+
+#### Example
+
+```typescript
+interface ImageResult {
+  url: string;
+}
+
+const result = await market.call<ImageResult>('text-to-image', {
+  prompt: 'A sunset',
+});
+console.log(result.url);
+```
+
+---
+
+### getCreator()
+
+Get a creator's profile.
+
+```typescript
+getCreator(address: string): Promise<Creator>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `address` | `string` | Creator's wallet address |
+
+#### Returns
+
+`Promise<Creator>` - Creator profile
+
+---
+
+### getReviews()
+
+Get reviews for a skill.
+
+```typescript
+getReviews(skillSlug: string): Promise<Review[]>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `skillSlug` | `string` | Skill slug identifier |
+
+#### Returns
+
+`Promise<Review[]>` - Array of reviews
+
+---
+
+### authenticate()
+
+Authenticate with wallet signature.
+
+```typescript
+authenticate(): Promise<string>
+```
+
+#### Returns
+
+`Promise<string>` - Auth token (stored internally)
+
+#### Throws
+
+- `Error('Wallet required for authentication')` - If no wallet configured
+
+---
+
+### feedback()
+
+Submit a review for a skill.
+
+```typescript
+feedback(slug: string, score: number, comment?: string): Promise<void>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `slug` | `string` | Skill slug identifier |
+| `score` | `number` | Score from 0-100 |
+| `comment` | `string` | Optional comment |
+
+#### Example
+
+```typescript
+await market.feedback('text-to-image', 85, 'Great results!');
+```
+
+---
+
+## Complete Example
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket({
+  wallet: process.env.WALLET_KEY,
+});
+
+// Search
+const skills = await market.search('AI');
+
+// Get info
+const skill = await market.info(skills[0].slug);
+
+// Call
+const result = await market.call(skill.slug, { prompt: 'Hello' });
+
+// Review
+await market.feedback(skill.slug, 90, 'Excellent!');
+```

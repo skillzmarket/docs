@@ -1,0 +1,60 @@
+---
+title: Installation
+description: Install the Skillz Market SDK in your project.
+---
+
+# Installation
+
+## Requirements
+
+- **Node.js** >= 18.0.0
+- **pnpm** >= 8.0.0 (recommended) or npm
+
+## Install the SDK
+
+The SDK requires `viem` as a peer dependency for wallet operations.
+
+```bash
+# Using pnpm (recommended)
+pnpm add @skillzmarket/sdk viem
+
+# Using npm
+npm install @skillzmarket/sdk viem
+```
+
+## TypeScript Support
+
+The SDK is written in TypeScript and includes type definitions. No additional `@types` packages are needed.
+
+```typescript
+// Types are automatically available
+import type { Skill, SkillOptions } from '@skillzmarket/sdk';
+```
+
+## Package Exports
+
+The SDK provides two entry points:
+
+```typescript
+// Consumer API - for calling paid skills
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+// Creator API - for creating monetized skills
+import { skill, serve } from '@skillzmarket/sdk/creator';
+```
+
+## Environment Setup
+
+For creators, set your wallet private key:
+
+```bash
+export SKILLZ_WALLET_KEY=0x...your-private-key
+```
+
+For consumers, you'll pass the wallet to the SDK constructor (see [Quick Start](/docs/getting-started/quick-start)).
+
+## Next Steps
+
+- [Quick Start Guide](/docs/getting-started/quick-start) - Get up and running
+- [Consumer Guide](/docs/consumer) - Learn to call paid skills
+- [Creator Guide](/docs/creator) - Learn to monetize your skills

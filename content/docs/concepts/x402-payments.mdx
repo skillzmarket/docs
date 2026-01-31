@@ -1,0 +1,168 @@
+---
+title: x402 Payment Protocol
+description: Understanding how payments work in Skillz Market.
+---
+
+# x402 Payment Protocol
+
+Skillz Market uses the [x402 protocol](https://x402.org) for seamless micropayments on the Base blockchain.
+
+## What is x402?
+
+x402 is a payment protocol that extends HTTP with native payment capabilities. It uses the HTTP status code `402 Payment Required` to enable pay-per-call APIs.
+
+## How It Works
+
+### Consumer Flow
+
+When you call `market.call()`:
+
+```
+Consumer                    Skill Server                 Facilitator
+    │                            │                            │
+    ├─ POST /skill ──────────────▶                            │
+    │                            │                            │
+    ◀── 402 Payment Required ────┤                            │
+    │   (includes price, payTo)  │                            │
+    │                            │                            │
+    ├─ Create USDC payment ──────────────────────────────────▶│
+    │                            │                            │
+    ◀── Payment proof ───────────────────────────────────────┤
+    │                            │                            │
+    ├─ POST /skill ──────────────▶                            │
+    │   (X-Payment header)       │                            │
+    │                            ├─ Verify payment ──────────▶│
+    │                            │                            │
+    │                            ◀── Valid ───────────────────┤
+    │                            │                            │
+    ◀── 200 OK ──────────────────┤                            │
+        (result)                 │                            │
+```
+
+### Creator Flow
+
+When someone calls your skill:
+
+```
+Consumer                    Your Server                  Facilitator
+    │                            │                            │
+    ├─ POST /skill ──────────────▶                            │
+    │   (no payment)             │                            │
+    │                            │                            │
+    ◀── 402 Payment Required ────┤                            │
+    │   { price, payTo, network }│                            │
+    │                            │                            │
+    ... (consumer makes payment) ...
+    │                            │                            │
+    ├─ POST /skill ──────────────▶                            │
+    │   (X-Payment: proof)       │                            │
+    │                            ├─ Verify payment ──────────▶│
+    │                            │                            │
+    │                            ◀── Valid ───────────────────┤
+    │                            │                            │
+    │                   ┌────────┤                            │
+    │                   │ Execute│                            │
+    │                   │ handler│                            │
+    │                   └────────┤                            │
+    │                            │                            │
+    ◀── 200 OK ──────────────────┤                            │
+        (result)                 │                            │
+```
+
+## Key Components
+
+### 402 Response
+
+When a skill is called without payment:
+
+```http
+HTTP/1.1 402 Payment Required
+Content-Type: application/json
+
+{
+  "accepts": {
+    "scheme": "exact",
+    "price": "0.005",
+    "network": "eip155:8453",
+    "payTo": "0x...",
+    "maxTimeoutSeconds": 60
+  },
+  "description": "AI text summarization"
+}
+```
+
+### Payment Header
+
+After making the payment:
+
+```http
+POST /summarize HTTP/1.1
+Content-Type: application/json
+X-Payment: base64-encoded-payment-proof
+
+{"text": "..."}
+```
+
+### Payment Verification
+
+The facilitator verifies:
+- Payment amount matches price
+- Payment recipient matches payTo
+- Payment was made on the correct network
+- Payment hasn't been used before
+
+## Currency and Network
+
+Skillz Market uses:
+- **Currency**: USDC (USD Coin)
+- **Network**: Base mainnet (`eip155:8453`)
+
+Base provides fast (~2 second) and cheap (~$0.001) transactions.
+
+## Facilitator
+
+The facilitator is a trusted service that:
+- Verifies payment proofs
+- Prevents double-spending
+- Provides payment receipts
+
+Default facilitator: `https://x402.dexter.cash`
+
+## SDK Integration
+
+The SDK handles all x402 complexity:
+
+### Consumer Side
+
+```typescript
+// SDK handles the entire flow automatically
+const result = await market.call('skill-slug', input);
+```
+
+### Creator Side
+
+```typescript
+// SDK adds x402 middleware automatically
+serve({ mySkill });
+```
+
+## Benefits
+
+1. **Micropayments** - Pay fractions of a cent per call
+2. **No Subscriptions** - Pay only for what you use
+3. **Instant Settlement** - Payments settle in seconds
+4. **No Account Required** - Just a wallet
+5. **Programmable** - Fully API-driven
+
+## Security
+
+- Payments use ECDSA signatures (same as Ethereum)
+- Each payment proof is single-use
+- HTTPS required for all endpoints
+- Private keys never leave your device
+
+## Learn More
+
+- [x402 Protocol Specification](https://x402.org)
+- [Base Network](https://base.org)
+- [USDC on Base](https://www.circle.com/en/usdc)

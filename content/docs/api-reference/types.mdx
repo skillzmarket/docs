@@ -1,0 +1,274 @@
+---
+title: Types
+description: TypeScript type definitions for the Skillz Market SDK.
+---
+
+# Types
+
+Complete TypeScript type definitions exported by the SDK.
+
+## Consumer Types
+
+### Skill
+
+```typescript
+interface Skill {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  price: string;
+  currency: string;
+  endpoint: string;
+  inputSchema: Record<string, unknown> | null;
+  outputSchema: Record<string, unknown> | null;
+  paymentAddress: string;
+  isActive: boolean;
+  creatorId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Creator
+
+```typescript
+interface Creator {
+  id: string;
+  walletAddress: string;
+  name: string | null;
+  avatar: string | null;
+  bio: string | null;
+  createdAt: string;
+}
+```
+
+### Review
+
+```typescript
+interface Review {
+  id: string;
+  skillId: string;
+  consumerAddress: string;
+  score: number;
+  comment: string | null;
+  createdAt: string;
+}
+```
+
+### SearchFilters
+
+```typescript
+interface SearchFilters {
+  category?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  creator?: string;
+}
+```
+
+### SkillzMarketOptions
+
+```typescript
+interface SkillzMarketOptions {
+  apiUrl?: string;
+  wallet?: WalletConfig;
+  network?: `${string}:${string}`;
+}
+```
+
+### WalletConfig
+
+```typescript
+import type { Hex } from 'viem';
+import type { PrivateKeyAccount } from 'viem/accounts';
+
+type WalletConfig = PrivateKeyAccount | Hex;
+```
+
+---
+
+## Creator Types
+
+### SkillOptions
+
+```typescript
+interface SkillOptions {
+  price: string;
+  description?: string;
+  timeout?: number;
+  inputSchema?: JsonSchema;
+  outputSchema?: JsonSchema;
+}
+```
+
+### JsonSchema
+
+```typescript
+interface JsonSchema {
+  type: string;
+  properties?: Record<string, JsonSchema>;
+  required?: string[];
+  items?: JsonSchema;
+  [key: string]: unknown;
+}
+```
+
+### SkillHandler
+
+```typescript
+type SkillHandler<TInput = unknown, TOutput = unknown> = (
+  input: TInput
+) => Promise<TOutput>;
+```
+
+### SkillDefinition
+
+```typescript
+interface SkillDefinition<TInput = unknown, TOutput = unknown> {
+  options: SkillOptions;
+  handler: SkillHandler<TInput, TOutput>;
+  parsedPrice: ParsedPrice;
+}
+```
+
+### SkillsMap
+
+```typescript
+type SkillsMap = Record<string, SkillDefinition<any, any>>;
+```
+
+### ParsedPrice
+
+```typescript
+interface ParsedPrice {
+  amount: string;
+  currency: 'USDC';
+}
+```
+
+### ServeOptions
+
+```typescript
+interface ServeOptions {
+  port?: number;
+  wallet?: Hex;
+  network?: `${string}:${string}`;
+  facilitatorUrl?: string;
+  appName?: string;
+  onCall?: (skillName: string, input: unknown) => void;
+  onError?: (skillName: string, error: Error) => void;
+  register?: RegistrationOptions;
+  trackCalls?: boolean;
+  apiUrl?: string;
+}
+```
+
+### RegistrationOptions
+
+```typescript
+interface RegistrationOptions {
+  apiUrl?: string;
+  endpoint: string;
+  enabled?: boolean;
+  onError?: 'throw' | 'warn' | 'silent';
+}
+```
+
+### RegistrationResult
+
+```typescript
+interface RegistrationResult {
+  name: string;
+  success: boolean;
+  slug?: string;
+  error?: string;
+}
+```
+
+---
+
+## Importing Types
+
+### Consumer Types
+
+```typescript
+import type {
+  Skill,
+  Creator,
+  Review,
+  SearchFilters,
+  SkillzMarketOptions,
+  WalletConfig,
+} from '@skillzmarket/sdk';
+```
+
+### Creator Types
+
+```typescript
+import type {
+  SkillOptions,
+  SkillHandler,
+  SkillDefinition,
+  SkillsMap,
+  ServeOptions,
+  RegistrationOptions,
+  RegistrationResult,
+  ParsedPrice,
+  JsonSchema,
+} from '@skillzmarket/sdk/creator';
+```
+
+---
+
+## Usage Examples
+
+### Typed Consumer
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+import type { Skill, SearchFilters } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket({ wallet: '0x...' });
+
+const filters: SearchFilters = {
+  category: 'text',
+  maxPrice: '0.01',
+};
+
+const skills: Skill[] = await market.search('AI', filters);
+```
+
+### Typed Creator
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+import type { SkillOptions, ServeOptions } from '@skillzmarket/sdk/creator';
+
+interface MyInput {
+  text: string;
+}
+
+interface MyOutput {
+  result: string;
+}
+
+const options: SkillOptions = {
+  price: '$0.001',
+  description: 'Process text',
+};
+
+const mySkill = skill<MyInput, MyOutput>(options, async ({ text }) => {
+  return { result: text.toUpperCase() };
+});
+
+const serveOptions: ServeOptions = {
+  port: 3002,
+  register: {
+    endpoint: 'https://example.com',
+    enabled: true,
+  },
+};
+
+serve({ mySkill }, serveOptions);
+```

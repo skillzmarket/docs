@@ -1,0 +1,167 @@
+---
+title: Discovery
+description: Search and browse skills on the Skillz Market.
+---
+
+# Discovery
+
+The SDK provides methods to discover skills without requiring a wallet.
+
+## Searching Skills
+
+Use `search()` to find skills by keyword:
+
+```typescript
+const market = new SkillzMarket();
+
+// Basic search
+const skills = await market.search('image generation');
+
+// With filters
+const skills = await market.search('AI', {
+  category: 'text',
+  minPrice: '0.001',
+  maxPrice: '0.01',
+  creator: '0x...',
+});
+```
+
+### Search Filters
+
+| Filter | Type | Description |
+|--------|------|-------------|
+| `category` | `string` | Filter by category |
+| `minPrice` | `string` | Minimum price in USDC |
+| `maxPrice` | `string` | Maximum price in USDC |
+| `creator` | `string` | Filter by creator wallet address |
+
+### Search Results
+
+Returns an array of `Skill` objects:
+
+```typescript
+interface Skill {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  price: string;
+  currency: string;
+  endpoint: string;
+  inputSchema: Record<string, unknown> | null;
+  outputSchema: Record<string, unknown> | null;
+  paymentAddress: string;
+  isActive: boolean;
+  creatorId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+## Getting Skill Details
+
+Use `info()` to get detailed information about a specific skill:
+
+```typescript
+const skill = await market.info('text-to-image');
+
+console.log(skill.name);        // "Text to Image"
+console.log(skill.price);       // "0.005"
+console.log(skill.currency);    // "USDC"
+console.log(skill.endpoint);    // "https://..."
+console.log(skill.isActive);    // true
+```
+
+### Input/Output Schemas
+
+Skills can define JSON Schemas for their input and output:
+
+```typescript
+const skill = await market.info('summarize-text');
+
+// Check if skill has input schema
+if (skill.inputSchema) {
+  console.log(skill.inputSchema);
+  // { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] }
+}
+```
+
+## Getting Creator Info
+
+Fetch a creator's profile:
+
+```typescript
+const creator = await market.getCreator('0x...');
+
+console.log(creator.name);     // "AI Developer"
+console.log(creator.bio);      // "Building cool AI tools"
+console.log(creator.avatar);   // "https://..."
+```
+
+### Creator Type
+
+```typescript
+interface Creator {
+  id: string;
+  walletAddress: string;
+  name: string | null;
+  avatar: string | null;
+  bio: string | null;
+  createdAt: string;
+}
+```
+
+## Getting Reviews
+
+Fetch reviews for a skill:
+
+```typescript
+const reviews = await market.getReviews('text-to-image');
+
+for (const review of reviews) {
+  console.log(`${review.score}/100 - ${review.comment}`);
+}
+```
+
+### Review Type
+
+```typescript
+interface Review {
+  id: string;
+  skillId: string;
+  consumerAddress: string;
+  score: number;
+  comment: string | null;
+  createdAt: string;
+}
+```
+
+## Example: Building a Skill Browser
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket();
+
+async function browseSkills() {
+  // Search for skills
+  const skills = await market.search('AI');
+
+  for (const skill of skills) {
+    console.log(`\n${skill.name} (${skill.slug})`);
+    console.log(`  Price: ${skill.price} ${skill.currency}`);
+    console.log(`  ${skill.description || 'No description'}`);
+
+    // Get reviews
+    const reviews = await market.getReviews(skill.slug);
+    const avgScore = reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.score, 0) / reviews.length
+      : 0;
+    console.log(`  Rating: ${avgScore.toFixed(1)}/100 (${reviews.length} reviews)`);
+  }
+}
+```
+
+## Next Steps
+
+- [Calling Skills](/docs/consumer/calling-skills) - Learn to call paid skills

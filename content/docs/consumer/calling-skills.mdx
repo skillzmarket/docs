@@ -1,0 +1,178 @@
+---
+title: Calling Skills
+description: Call paid skills with automatic x402 payment handling.
+---
+
+# Calling Skills
+
+The SDK handles the entire x402 payment flow automatically when you call a skill.
+
+## Basic Usage
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket({
+  wallet: process.env.WALLET_KEY,
+});
+
+// Call a skill - payment is automatic
+const result = await market.call('text-to-image', {
+  prompt: 'A sunset over mountains',
+  style: 'photorealistic',
+});
+
+console.log(result);
+```
+
+## How Payments Work
+
+When you call `market.call()`:
+
+1. **Fetch skill info** - SDK gets the skill's endpoint and price
+2. **Make initial request** - SDK calls the skill endpoint
+3. **Handle 402** - Endpoint returns `402 Payment Required`
+4. **Create payment** - SDK creates a USDC transfer on Base
+5. **Retry with proof** - SDK retries with payment proof header
+6. **Return result** - Skill executes and returns the result
+
+All of this happens automatically - you just await the result.
+
+## Requirements
+
+To call paid skills, you need:
+
+1. **A wallet** with USDC on Base mainnet
+2. **Sufficient balance** for the skill's price
+
+```typescript
+// Wallet is required for paid skills
+const market = new SkillzMarket({
+  wallet: '0x...your-private-key',
+  network: 'eip155:8453', // Base mainnet (default)
+});
+```
+
+## Error Handling
+
+Handle common errors when calling skills:
+
+```typescript
+try {
+  const result = await market.call('text-to-image', { prompt: 'Hello' });
+  console.log(result);
+} catch (error) {
+  if (error.message.includes('Wallet required')) {
+    console.error('You need to provide a wallet to call paid skills');
+  } else if (error.message.includes('not active')) {
+    console.error('This skill is currently unavailable');
+  } else if (error.message.includes('failed')) {
+    console.error('Skill call failed:', error.message);
+  }
+}
+```
+
+### Common Errors
+
+| Error | Cause |
+|-------|-------|
+| `Wallet required for calling paid skills` | No wallet provided to constructor |
+| `Skill [slug] is not active` | Skill is disabled by creator |
+| `Skill call failed: ...` | Skill endpoint returned an error |
+
+## Checking Skill Status
+
+Before calling, you can check if a skill is active:
+
+```typescript
+const skill = await market.info('text-to-image');
+
+if (!skill.isActive) {
+  console.log('Skill is not available');
+  return;
+}
+
+// Safe to call
+const result = await market.call(skill.slug, input);
+```
+
+## Typed Results
+
+You can type the result for better type safety:
+
+```typescript
+interface ImageResult {
+  url: string;
+  width: number;
+  height: number;
+}
+
+const result = await market.call<ImageResult>('text-to-image', {
+  prompt: 'A sunset',
+});
+
+console.log(result.url);    // TypeScript knows this is a string
+console.log(result.width);  // TypeScript knows this is a number
+```
+
+## Submitting Feedback
+
+After calling a skill, you can leave a review:
+
+```typescript
+// First, authenticate
+await market.authenticate();
+
+// Then submit feedback (score 0-100)
+await market.feedback('text-to-image', 85, 'Great results!');
+```
+
+### Authentication Flow
+
+The SDK handles authentication automatically when you call `feedback()`, but you can also authenticate explicitly:
+
+```typescript
+const token = await market.authenticate();
+// Token is stored internally for subsequent requests
+```
+
+## Example: Complete Workflow
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+async function useSkill() {
+  const market = new SkillzMarket({
+    wallet: process.env.WALLET_KEY,
+  });
+
+  // 1. Find a skill
+  const skills = await market.search('summarize');
+  const skill = skills[0];
+
+  if (!skill || !skill.isActive) {
+    console.log('No active skill found');
+    return;
+  }
+
+  console.log(`Using: ${skill.name} (${skill.price} ${skill.currency})`);
+
+  // 2. Call the skill
+  const result = await market.call(skill.slug, {
+    text: 'A very long article that needs summarizing...',
+  });
+
+  console.log('Summary:', result);
+
+  // 3. Leave feedback
+  await market.feedback(skill.slug, 90, 'Excellent summarization!');
+  console.log('Feedback submitted');
+}
+
+useSkill().catch(console.error);
+```
+
+## Next Steps
+
+- [x402 Payments](/docs/concepts/x402-payments) - Deep dive into the payment protocol
+- [Creator Guide](/docs/creator) - Learn to create your own skills

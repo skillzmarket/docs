@@ -1,0 +1,175 @@
+---
+title: Registration
+description: Register your skills with the Skillz Market for discovery.
+---
+
+# Registration
+
+Register your skills with the Skillz Market so users can discover them.
+
+## Auto-Registration via serve()
+
+The easiest way is to enable auto-registration in `serve()`:
+
+```typescript
+serve({ summarize, translate }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+  },
+});
+```
+
+When the server starts, skills are automatically registered.
+
+## Manual Registration
+
+Use `register()` for more control:
+
+```typescript
+import { skill, register } from '@skillzmarket/sdk/creator';
+
+const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
+
+const results = await register({ echo }, {
+  endpoint: 'https://your-server.com',
+  apiUrl: 'https://api.skillz.market',
+});
+
+for (const result of results) {
+  if (result.success) {
+    console.log(`Registered: ${result.name} -> ${result.slug}`);
+  } else {
+    console.error(`Failed: ${result.name} - ${result.error}`);
+  }
+}
+```
+
+## Registration Options
+
+```typescript
+interface RegistrationOptions {
+  endpoint: string;              // Your public server URL (required)
+  apiUrl?: string;               // Default: 'https://api.skillz.market'
+  enabled?: boolean;             // Default: true
+  onError?: 'throw' | 'warn' | 'silent';  // Default: 'warn'
+}
+```
+
+### endpoint (Required)
+
+The public URL where your skills are accessible:
+
+```typescript
+register({ echo }, {
+  endpoint: 'https://api.example.com',
+  // Skills will be registered as:
+  // POST https://api.example.com/echo
+});
+```
+
+### onError
+
+Control how registration errors are handled:
+
+| Value | Behavior |
+|-------|----------|
+| `'throw'` | Throw an error if registration fails |
+| `'warn'` | Log a warning (default) |
+| `'silent'` | Ignore failures silently |
+
+```typescript
+serve({ echo }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    onError: 'throw',  // Fail fast if registration fails
+  },
+});
+```
+
+## Registration Results
+
+The `register()` function returns an array of results:
+
+```typescript
+interface RegistrationResult {
+  name: string;       // Skill name
+  success: boolean;   // Whether registration succeeded
+  slug?: string;      // Assigned slug (if successful)
+  error?: string;     // Error message (if failed)
+}
+```
+
+```typescript
+const results = await register({ echo, summarize }, options);
+
+const successful = results.filter(r => r.success);
+const failed = results.filter(r => !r.success);
+
+console.log(`Registered ${successful.length}/${results.length} skills`);
+```
+
+## Authentication
+
+Registration requires wallet authentication. The SDK handles this automatically using the same wallet used for receiving payments.
+
+```bash
+# Same wallet used for both payments and registration
+SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+```
+
+## Server Output
+
+When auto-registration succeeds:
+
+```
+==================================================
+  Skillz Market - Creator Server
+==================================================
+
+  URL:      http://localhost:3002
+  Network:  eip155:8453
+  Wallet:   0x...
+
+  Skills:
+    POST /echo - 0.001 USDC
+    POST /summarize - 0.005 USDC
+
+==================================================
+
+  Registering skills with Skillz Market...
+
+  ✓ Registered skills:
+    - echo (echo-abc123)
+    - summarize (summarize-def456)
+
+==================================================
+```
+
+## Updating Registered Skills
+
+When you restart your server with auto-registration enabled, skills are re-registered. Updates are applied if:
+
+- Price changed
+- Description changed
+- Input/output schemas changed
+- Endpoint changed
+
+## Example: Conditional Registration
+
+Only register in production:
+
+```typescript
+serve({ echo, summarize }, {
+  register: {
+    endpoint: process.env.PUBLIC_URL!,
+    enabled: process.env.NODE_ENV === 'production',
+    onError: process.env.NODE_ENV === 'production' ? 'throw' : 'warn',
+  },
+});
+```
+
+## Next Steps
+
+- [x402 Payments](/docs/concepts/x402-payments) - Understand the payment protocol
+- [API Reference](/docs/api-reference/skill-function) - Detailed function reference

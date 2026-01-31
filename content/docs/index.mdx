@@ -1,0 +1,61 @@
+---
+title: Introduction
+description: Get started with @skillzmarket/sdk - the SDK for discovering and monetizing AI skills with automatic crypto payments.
+---
+
+# Introduction
+
+Welcome to the **Skillz Market SDK** documentation. This SDK enables you to:
+
+- **Discover and call paid AI skills** with automatic x402 payments
+- **Create and monetize your own AI skills** with zero crypto knowledge
+
+## What is Skillz Market?
+
+Skillz Market is a marketplace for AI skills that handles payments automatically using the [x402 protocol](https://x402.org). Whether you want to use existing skills or create your own monetized services, the SDK makes it simple.
+
+## Two APIs, One SDK
+
+The SDK provides two entry points:
+
+### Consumer API
+
+For developers who want to **use paid skills**:
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket({ wallet: '0x...' });
+const result = await market.call('text-to-image', { prompt: 'A sunset' });
+```
+
+[Get started with the Consumer API →](/docs/consumer)
+
+### Creator API
+
+For developers who want to **monetize their AI services**:
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
+serve({ echo });
+```
+
+[Get started with the Creator API →](/docs/creator)
+
+## Key Features
+
+- **Automatic Payments** - x402 protocol handles USDC payments on Base
+- **Type-Safe** - Full TypeScript support with comprehensive types
+- **Simple Pricing** - Use natural formats like `$0.001` or `0.005 USDC`
+- **Zero Config** - Works out of the box with sensible defaults
+- **Built on Base** - Fast, low-cost transactions
+
+## Quick Links
+
+- [Installation](/docs/getting-started/installation)
+- [Quick Start Guide](/docs/getting-started/quick-start)
+- [Consumer API Reference](/docs/consumer)
+- [Creator API Reference](/docs/creator)
+- [x402 Payment Protocol](/docs/concepts/x402-payments)

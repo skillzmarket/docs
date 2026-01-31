@@ -1,0 +1,194 @@
+---
+title: skill() Function
+description: API reference for the skill() function to define monetized skills.
+---
+
+# skill() Function
+
+Define a monetized skill with pricing and handler.
+
+```typescript
+import { skill } from '@skillzmarket/sdk/creator';
+```
+
+## Signature
+
+```typescript
+function skill<TInput = unknown, TOutput = unknown>(
+  options: SkillOptions,
+  handler: SkillHandler<TInput, TOutput>
+): SkillDefinition<TInput, TOutput>
+```
+
+## Parameters
+
+### options
+
+```typescript
+interface SkillOptions {
+  price: string;
+  description?: string;
+  timeout?: number;
+  inputSchema?: JsonSchema;
+  outputSchema?: JsonSchema;
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `price` | `string` | Required | Price per call (e.g., `'$0.001'`) |
+| `description` | `string` | - | Skill description |
+| `timeout` | `number` | `60000` | Max execution time in ms |
+| `inputSchema` | `JsonSchema` | - | JSON Schema for input |
+| `outputSchema` | `JsonSchema` | - | JSON Schema for output |
+
+#### Price Formats
+
+| Format | Example | Parsed Amount |
+|--------|---------|---------------|
+| Dollar prefix | `'$0.001'` | 0.001 USDC |
+| Currency suffix | `'0.005 USDC'` | 0.005 USDC |
+| Plain number | `'0.01'` | 0.01 USDC |
+
+#### Timeout Limits
+
+- Minimum: 1ms
+- Maximum: 300000ms (5 minutes)
+- Default: 60000ms (1 minute)
+
+### handler
+
+```typescript
+type SkillHandler<TInput, TOutput> = (input: TInput) => Promise<TOutput>;
+```
+
+An async function that:
+- Receives input from the caller
+- Returns the result
+- Throws on error (returns 500 to caller)
+
+## Returns
+
+```typescript
+interface SkillDefinition<TInput, TOutput> {
+  options: SkillOptions;
+  handler: SkillHandler<TInput, TOutput>;
+  parsedPrice: ParsedPrice;
+}
+
+interface ParsedPrice {
+  amount: string;
+  currency: 'USDC';
+}
+```
+
+## Examples
+
+### Basic Skill
+
+```typescript
+const echo = skill({
+  price: '$0.001',
+}, async (input) => {
+  return { echo: input };
+});
+```
+
+### Typed Skill
+
+```typescript
+interface SummarizeInput {
+  text: string;
+  maxLength?: number;
+}
+
+interface SummarizeOutput {
+  summary: string;
+  wordCount: number;
+}
+
+const summarize = skill<SummarizeInput, SummarizeOutput>({
+  price: '$0.005',
+  description: 'Summarize text using AI',
+}, async ({ text, maxLength = 100 }) => {
+  const summary = text.slice(0, maxLength);
+  return {
+    summary,
+    wordCount: summary.split(' ').length,
+  };
+});
+```
+
+### With JSON Schema
+
+```typescript
+const translate = skill({
+  price: '$0.003',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      text: { type: 'string' },
+      targetLang: { type: 'string', enum: ['en', 'es', 'fr', 'de'] },
+    },
+    required: ['text', 'targetLang'],
+  },
+  outputSchema: {
+    type: 'object',
+    properties: {
+      translated: { type: 'string' },
+      sourceLang: { type: 'string' },
+    },
+  },
+}, async ({ text, targetLang }) => {
+  return {
+    translated: `[${targetLang}] ${text}`,
+    sourceLang: 'auto',
+  };
+});
+```
+
+### With Custom Timeout
+
+```typescript
+const longRunning = skill({
+  price: '$0.01',
+  timeout: 180000, // 3 minutes
+}, async (input) => {
+  // Long-running operation
+  return { result: '...' };
+});
+```
+
+## Error Handling
+
+Throw errors to return a 500 response:
+
+```typescript
+const validated = skill({
+  price: '$0.001',
+}, async ({ data }) => {
+  if (!data) {
+    throw new Error('Data is required');
+  }
+  if (typeof data !== 'string') {
+    throw new Error('Data must be a string');
+  }
+  return { processed: data };
+});
+```
+
+In production (`NODE_ENV=production`), error messages are masked to prevent information disclosure.
+
+## Validation
+
+The function validates:
+- Price format (must be parseable)
+- Timeout value (must be positive, max 5 minutes)
+
+```typescript
+// Throws: Invalid price format
+skill({ price: 'free' }, handler);
+
+// Throws: Timeout too long
+skill({ price: '$0.01', timeout: 600000 }, handler);
+```

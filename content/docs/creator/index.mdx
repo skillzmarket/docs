@@ -1,0 +1,105 @@
+---
+title: Creator API
+description: Create and monetize your AI skills with the Creator API.
+---
+
+# Creator API
+
+The Creator API lets you build monetized AI skills with zero crypto knowledge. Define your skills, set prices, and start earning.
+
+## Overview
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+// Define skills
+const summarize = skill({
+  price: '$0.005',
+  description: 'Summarize text using AI',
+}, async ({ text }) => {
+  return { summary: text.slice(0, 100) + '...' };
+});
+
+// Serve them
+serve({ summarize });
+```
+
+Run with:
+
+```bash
+SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+```
+
+## Key Functions
+
+| Function | Description |
+|----------|-------------|
+| `skill(options, handler)` | Define a monetized skill |
+| `serve(skills, options?)` | Start the skill server |
+| `register(skills, options)` | Register skills with marketplace |
+
+## How It Works
+
+1. **Define** - Use `skill()` to create skill definitions with pricing
+2. **Serve** - Use `serve()` to start an x402-protected server
+3. **Register** - Optionally register with Skillz Market for discovery
+4. **Earn** - Receive USDC directly to your wallet on each call
+
+## Quick Example
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+// A simple echo skill
+const echo = skill({
+  price: '$0.001',
+  description: 'Echoes input back',
+}, async (input) => {
+  return { echo: input };
+});
+
+// An uppercase skill
+const uppercase = skill({
+  price: '$0.0005',
+  description: 'Converts text to uppercase',
+}, async ({ text }: { text: string }) => {
+  return { result: text.toUpperCase() };
+});
+
+// Serve both skills
+serve({ echo, uppercase }, {
+  port: 3002,
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+  },
+});
+```
+
+## Server Output
+
+When you run your server, you'll see:
+
+```
+==================================================
+  Skillz Market - Creator Server
+==================================================
+
+  URL:      http://localhost:3002
+  Network:  eip155:8453
+  Wallet:   0x...
+
+  Skills:
+    POST /echo - 0.001 USDC
+         Echoes input back
+    POST /uppercase - 0.0005 USDC
+         Converts text to uppercase
+
+==================================================
+```
+
+## Next Steps
+
+- [Defining Skills](/docs/creator/defining-skills) - Learn skill configuration options
+- [Serving Skills](/docs/creator/serving-skills) - Learn server configuration
+- [Registration](/docs/creator/registration) - Register for marketplace discovery

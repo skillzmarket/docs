@@ -1,0 +1,80 @@
+---
+title: Consumer API
+description: Use the Consumer API to discover and call paid AI skills.
+---
+
+# Consumer API
+
+The Consumer API lets you discover skills on the marketplace and call them with automatic payment handling.
+
+## Overview
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+// Initialize the client
+const market = new SkillzMarket({
+  wallet: '0x...',           // Your private key
+  network: 'eip155:8453',    // Base mainnet (default)
+  apiUrl: 'https://api.skillz.market', // Optional
+});
+
+// Discover skills
+const skills = await market.search('image generation');
+const skill = await market.info('text-to-image');
+
+// Call a skill (payment is automatic)
+const result = await market.call('text-to-image', {
+  prompt: 'A sunset over mountains',
+});
+```
+
+## The SkillzMarket Class
+
+### Constructor
+
+```typescript
+const market = new SkillzMarket(options?: SkillzMarketOptions);
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `wallet` | `WalletConfig` | - | Private key or viem account for payments |
+| `network` | `string` | `'eip155:8453'` | Network for payments (Base mainnet) |
+| `apiUrl` | `string` | `'https://api.skillz.market'` | API endpoint |
+
+### Wallet Configuration
+
+You can pass the wallet as either:
+
+```typescript
+// Option 1: Private key string
+const market = new SkillzMarket({
+  wallet: '0x...your-private-key',
+});
+
+// Option 2: viem PrivateKeyAccount
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+const market = new SkillzMarket({
+  wallet: account,
+});
+```
+
+## Methods Summary
+
+| Method | Description | Requires Wallet |
+|--------|-------------|-----------------|
+| `search(query, filters?)` | Search for skills | No |
+| `info(slug)` | Get skill details | No |
+| `call(slug, input)` | Call a skill with payment | Yes |
+| `getCreator(address)` | Get creator profile | No |
+| `getReviews(slug)` | Get skill reviews | No |
+| `authenticate()` | Auth with wallet signature | Yes |
+| `feedback(slug, score, comment?)` | Submit a review | Yes |
+
+## Next Steps
+
+- [Discovery](/docs/consumer/discovery) - Learn about searching and browsing skills
+- [Calling Skills](/docs/consumer/calling-skills) - Learn about the payment flow
