@@ -76,6 +76,7 @@ interface SearchFilters {
   minPrice?: string;
   maxPrice?: string;
   creator?: string;
+  group?: string;  // Filter by group slug
 }
 ```
 
@@ -198,6 +199,66 @@ getReviews(skillSlug: string): Promise<Review[]>
 #### Returns
 
 `Promise<Review[]>` - Array of reviews
+
+---
+
+### getGroups()
+
+List skill groups, optionally filtered by creator.
+
+```typescript
+getGroups(creatorAddress?: string): Promise<SkillGroup[]>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `creatorAddress` | `string` | Optional creator wallet address filter |
+
+#### Returns
+
+`Promise<SkillGroup[]>` - Array of skill groups
+
+#### Example
+
+```typescript
+// Get all groups
+const groups = await market.getGroups();
+
+// Get groups by creator
+const creatorGroups = await market.getGroups('0x...');
+```
+
+---
+
+### getGroup()
+
+Get a specific group with its skills.
+
+```typescript
+getGroup(slug: string, creatorAddress?: string): Promise<SkillGroupWithSkills>
+```
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `slug` | `string` | Group slug identifier |
+| `creatorAddress` | `string` | Optional creator wallet address for scoping |
+
+#### Returns
+
+`Promise<SkillGroupWithSkills>` - Group with its skills and creator info
+
+#### Example
+
+```typescript
+const group = await market.getGroup('ai-tools');
+
+console.log(group.name);    // "AI Tools"
+console.log(group.skills);  // Array of skills in this group
+```
 
 ---
 

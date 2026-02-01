@@ -92,6 +92,10 @@ interface RegistrationOptions {
   apiUrl?: string;               // Default: 'https://api.skillz.market'
   enabled?: boolean;             // Default: true
   onError?: 'throw' | 'warn' | 'silent';  // Default: 'warn'
+  groups?: string[];             // Global groups (merged with per-skill)
+  batch?: {
+    concurrency?: number;        // Max concurrent registrations (default: 5)
+  };
 }
 ```
 
@@ -201,6 +205,113 @@ When you restart your server with auto-registration enabled, skills are re-regis
 - Description changed
 - Input/output schemas changed
 - Endpoint changed
+
+## Assigning Skills to Groups
+
+Skills can be assigned to groups during registration. Groups must already exist and belong to your account (create them via the dashboard).
+
+**Important:** At least one group is required per skill. You can assign groups either globally (applies to all skills) or per-skill.
+
+### Global Groups
+
+All skills get these groups:
+
+```typescript
+serve({ summarize, translate }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    groups: ['ai-tools'],  // Both skills get 'ai-tools'
+  },
+});
+```
+
+### Per-Skill Groups
+
+Define groups directly on each skill:
+
+```typescript
+const summarize = skill({
+  price: '$0.005',
+  groups: ['text-processing'],  // Just this skill
+}, async ({ text }) => ({ summary: '...' }));
+
+const translate = skill({
+  price: '$0.003',
+  groups: ['translation'],
+}, async ({ text, lang }) => ({ translated: '...' }));
+
+serve({ summarize, translate }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    groups: ['ai-tools'],  // Global groups
+  },
+});
+// summarize → ['ai-tools', 'text-processing']
+// translate → ['ai-tools', 'translation']
+```
+
+### Manual Registration with Groups
+
+```typescript
+const results = await register({ summarize }, {
+  apiKey: process.env.SKILLZ_API_KEY!,
+  paymentAddress: process.env.SKILLZ_WALLET_ADDRESS!,
+  endpoint: 'https://your-server.com',
+  groups: ['ai-tools'],  // Global groups
+});
+```
+
+## Updating Skills
+
+Use `updateSkill()` to update existing skills, including changing their groups:
+
+```typescript
+import { updateSkill } from '@skillzmarket/sdk/creator';
+
+const result = await updateSkill('my-skill-slug', {
+  description: 'Updated description',
+  groups: ['new-group', 'another-group'],  // Replace all groups
+}, {
+  apiKey: process.env.SKILLZ_API_KEY!,
+});
+
+if (result.success) {
+  console.log('Skill updated!');
+} else {
+  console.error('Update failed:', result.error);
+}
+```
+
+### Update Options
+
+```typescript
+interface SkillUpdateData {
+  description?: string;
+  price?: string;           // e.g., '$0.005'
+  groups?: string[];        // Replaces existing groups
+  inputSchema?: JsonSchema;
+  outputSchema?: JsonSchema;
+  isActive?: boolean;
+}
+```
+
+## Parallel Registration
+
+Skills are registered in parallel with a configurable concurrency limit:
+
+```typescript
+serve({ skill1, skill2, skill3, /* ... */ skill20 }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    groups: ['my-group'],
+    batch: {
+      concurrency: 10,  // Register up to 10 skills at once
+    },
+  },
+});
+```
+
+Default concurrency is 5. Increase for faster registration with many skills.
 
 ## Example: Conditional Registration
 

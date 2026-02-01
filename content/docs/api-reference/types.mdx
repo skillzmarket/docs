@@ -27,6 +27,28 @@ interface Skill {
   creatorId: string;
   createdAt: string;
   updatedAt: string;
+  groups?: SkillGroup[];  // Groups this skill belongs to
+}
+```
+
+### SkillGroup
+
+```typescript
+interface SkillGroup {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  creatorId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SkillGroupWithSkills extends SkillGroup {
+  skills: Skill[];
+  creator: Creator | null;
 }
 ```
 
@@ -64,6 +86,7 @@ interface SearchFilters {
   minPrice?: string;
   maxPrice?: string;
   creator?: string;
+  group?: string;  // Filter by group slug
 }
 ```
 
@@ -99,6 +122,7 @@ interface SkillOptions {
   timeout?: number;
   inputSchema?: JsonSchema;
   outputSchema?: JsonSchema;
+  groups?: string[];  // Per-skill groups (merged with global)
 }
 ```
 
@@ -165,6 +189,14 @@ interface ServeOptions {
 }
 ```
 
+### BatchOptions
+
+```typescript
+interface BatchOptions {
+  concurrency?: number;  // Max concurrent requests (default: 5)
+}
+```
+
 ### RegistrationOptions
 
 ```typescript
@@ -173,6 +205,8 @@ interface RegistrationOptions {
   endpoint: string;
   enabled?: boolean;
   onError?: 'throw' | 'warn' | 'silent';
+  groups?: string[];   // Global groups (merged with per-skill)
+  batch?: BatchOptions;
 }
 ```
 
@@ -196,6 +230,40 @@ interface RegisterOptions {
   endpoint: string;
   apiUrl?: string;
   onError?: 'throw' | 'warn' | 'silent';
+  groups?: string[];   // Global groups (merged with per-skill)
+  batch?: BatchOptions;
+}
+```
+
+### SkillUpdateData
+
+```typescript
+interface SkillUpdateData {
+  description?: string;
+  price?: string;
+  groups?: string[];  // Replaces existing groups
+  inputSchema?: JsonSchema;
+  outputSchema?: JsonSchema;
+  isActive?: boolean;
+}
+```
+
+### UpdateResult
+
+```typescript
+interface UpdateResult {
+  slug: string;
+  success: boolean;
+  error?: string;
+}
+```
+
+### UpdateOptions
+
+```typescript
+interface UpdateOptions {
+  apiKey: string;
+  apiUrl?: string;
 }
 ```
 
@@ -219,6 +287,8 @@ interface ConfigStatus {
 ```typescript
 import type {
   Skill,
+  SkillGroup,
+  SkillGroupWithSkills,
   Creator,
   Review,
   SearchFilters,
@@ -241,6 +311,10 @@ import type {
   RegisterOptions,
   ParsedPrice,
   JsonSchema,
+  BatchOptions,
+  SkillUpdateData,
+  UpdateResult,
+  UpdateOptions,
 } from '@skillzmarket/sdk/creator';
 ```
 

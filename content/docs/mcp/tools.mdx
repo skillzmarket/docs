@@ -24,6 +24,10 @@ Search the Skillz Market for skills by name or description.
     "category": {
       "type": "string",
       "description": "Filter by category (optional)"
+    },
+    "group": {
+      "type": "string",
+      "description": "Filter by group slug (optional)"
     }
   },
   "required": ["query"]
@@ -194,6 +198,109 @@ Get reviews for a specific skill.
   }
 ]
 ```
+
+## skillz_groups
+
+List skill groups, optionally filtered by creator.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "creator": {
+      "type": "string",
+      "description": "Filter by creator wallet address (optional)"
+    }
+  },
+  "required": []
+}
+```
+
+### Example
+
+**Prompt:** "List all skill groups on Skillz Market"
+
+**Response:**
+```json
+[
+  {
+    "slug": "ai-tools",
+    "name": "AI Tools",
+    "description": "Collection of AI utilities",
+    "icon": "🤖",
+    "isActive": true
+  },
+  {
+    "slug": "image-generation",
+    "name": "Image Generation",
+    "description": "Text-to-image and image editing skills",
+    "icon": "🎨",
+    "isActive": true
+  }
+]
+```
+
+---
+
+## skillz_group
+
+Get details about a specific skill group including its skills.
+
+### Input Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "slug": {
+      "type": "string",
+      "description": "Group slug"
+    },
+    "creator": {
+      "type": "string",
+      "description": "Creator wallet address (optional, for scoping)"
+    }
+  },
+  "required": ["slug"]
+}
+```
+
+### Example
+
+**Prompt:** "Get details about the ai-tools group"
+
+**Response:**
+```json
+{
+  "slug": "ai-tools",
+  "name": "AI Tools",
+  "description": "Collection of AI utilities",
+  "icon": "🤖",
+  "isActive": true,
+  "skills": [
+    {
+      "slug": "text-to-image",
+      "name": "Text to Image",
+      "price": "0.01",
+      "currency": "USDC"
+    },
+    {
+      "slug": "summarize",
+      "name": "Summarize Text",
+      "price": "0.005",
+      "currency": "USDC"
+    }
+  ],
+  "creator": {
+    "walletAddress": "0x...",
+    "name": "AI Developer"
+  }
+}
+```
+
+---
 
 ## Next Steps
 

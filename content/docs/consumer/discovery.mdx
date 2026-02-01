@@ -34,6 +34,7 @@ const skills = await market.search('AI', {
 | `minPrice` | `string` | Minimum price in USDC |
 | `maxPrice` | `string` | Maximum price in USDC |
 | `creator` | `string` | Filter by creator wallet address |
+| `group` | `string` | Filter by group slug |
 
 ### Search Results
 
@@ -55,6 +56,7 @@ interface Skill {
   creatorId: string;
   createdAt: string;
   updatedAt: string;
+  groups?: SkillGroup[];  // Groups this skill belongs to
 }
 ```
 
@@ -133,6 +135,65 @@ interface Review {
   score: number;
   comment: string | null;
   createdAt: string;
+}
+```
+
+## Browsing Groups
+
+Skill groups allow creators to organize related skills together.
+
+### Listing Groups
+
+```typescript
+// Get all groups
+const groups = await market.getGroups();
+
+// Get groups by a specific creator
+const creatorGroups = await market.getGroups('0x...');
+```
+
+### Getting Group Details
+
+```typescript
+// Get a group with its skills
+const group = await market.getGroup('ai-tools');
+
+console.log(group.name);         // "AI Tools"
+console.log(group.description);  // "Collection of AI utilities"
+console.log(group.skills);       // Array of skills in this group
+```
+
+### Searching Within a Group
+
+```typescript
+// Find all skills in a group
+const skills = await market.search('', { group: 'ai-tools' });
+
+// Combine with other filters
+const cheapSkills = await market.search('image', {
+  group: 'ai-tools',
+  maxPrice: '0.01',
+});
+```
+
+### SkillGroup Type
+
+```typescript
+interface SkillGroup {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  creatorId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SkillGroupWithSkills extends SkillGroup {
+  skills: Skill[];
+  creator: Creator | null;
 }
 ```
 
