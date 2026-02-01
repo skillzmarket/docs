@@ -7,6 +7,72 @@ description: Get up and running with the Skillz Market SDK in 5 minutes.
 
 This guide will get you calling or creating paid AI skills in just a few minutes.
 
+## Creator: Monetize Your Skills
+
+If you want to **create** and monetize your own AI skills:
+
+### 1. Install the SDK
+
+```bash
+pnpm add @skillzmarket/sdk viem
+```
+
+### 2. Run the Setup Wizard
+
+The easiest way to get started is with the interactive setup:
+
+```bash
+npx @skillzmarket/sdk init
+```
+
+This will guide you through:
+- Getting an API key from [skillz.market/dashboard](https://skillz.market/dashboard)
+- Configuring your wallet address for receiving payments
+- Saving the configuration to `.env`
+
+### 3. Define Your Skills
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+// Define a simple skill
+const echo = skill({
+  price: '$0.001',
+  description: 'Echoes input back',
+}, async (input) => {
+  return { echo: input };
+});
+
+// Define another skill
+const uppercase = skill({
+  price: '$0.0005',
+  description: 'Converts text to uppercase',
+}, async ({ text }: { text: string }) => {
+  return { result: text.toUpperCase() };
+});
+```
+
+### 4. Serve Your Skills
+
+```typescript
+serve({ echo, uppercase }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+  },
+});
+```
+
+### 5. Run Your Server
+
+```bash
+npx tsx index.ts
+```
+
+Your skills are now live and accepting payments!
+
+---
+
 ## Consumer: Call Paid Skills
 
 If you want to **use** paid skills from the marketplace:
@@ -49,54 +115,6 @@ That's it! The SDK automatically handles the x402 payment flow.
 
 ---
 
-## Creator: Monetize Your Skills
-
-If you want to **create** and monetize your own AI skills:
-
-### 1. Install the SDK
-
-```bash
-pnpm add @skillzmarket/sdk viem
-```
-
-### 2. Define Your Skills
-
-```typescript
-import { skill, serve } from '@skillzmarket/sdk/creator';
-
-// Define a simple skill
-const echo = skill({
-  price: '$0.001',
-  description: 'Echoes input back',
-}, async (input) => {
-  return { echo: input };
-});
-
-// Define another skill
-const uppercase = skill({
-  price: '$0.0005',
-  description: 'Converts text to uppercase',
-}, async ({ text }: { text: string }) => {
-  return { result: text.toUpperCase() };
-});
-```
-
-### 3. Serve Your Skills
-
-```typescript
-serve({ echo, uppercase });
-```
-
-### 4. Run Your Server
-
-```bash
-SKILLZ_WALLET_KEY=0x... npx tsx index.ts
-```
-
-Your skills are now live and accepting payments!
-
----
-
 ## What Happens Under the Hood
 
 ### For Consumers
@@ -111,12 +129,15 @@ Your skills are now live and accepting payments!
 
 ### For Creators
 
-1. You define skills with `skill(options, handler)`
-2. You serve them with `serve(skills)`
-3. Server starts with x402 payment middleware
-4. When called, middleware validates payment
-5. Your handler executes
-6. Result is returned to consumer
+1. You sign once in the dashboard to create your account
+2. You get an API key for registration
+3. You define skills with `skill(options, handler)`
+4. You serve them with `serve(skills)`
+5. Server starts with x402 payment middleware
+6. Skills are registered with the marketplace
+7. When called, middleware validates payment
+8. Your handler executes
+9. USDC is sent directly to your wallet
 
 ## Next Steps
 

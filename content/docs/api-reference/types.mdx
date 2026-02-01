@@ -152,7 +152,8 @@ interface ParsedPrice {
 ```typescript
 interface ServeOptions {
   port?: number;
-  wallet?: Hex;
+  wallet?: string;           // 42-char address or 66-char private key
+  apiKey?: string;           // API key for registration
   network?: `${string}:${string}`;
   facilitatorUrl?: string;
   appName?: string;
@@ -186,6 +187,29 @@ interface RegistrationResult {
 }
 ```
 
+### RegisterOptions
+
+```typescript
+interface RegisterOptions {
+  apiKey: string;
+  paymentAddress: Address;
+  endpoint: string;
+  apiUrl?: string;
+  onError?: 'throw' | 'warn' | 'silent';
+}
+```
+
+### ConfigStatus
+
+```typescript
+interface ConfigStatus {
+  configured: boolean;
+  apiKey: boolean;
+  walletAddress: boolean;
+  issues: string[];
+}
+```
+
 ---
 
 ## Importing Types
@@ -214,6 +238,7 @@ import type {
   ServeOptions,
   RegistrationOptions,
   RegistrationResult,
+  RegisterOptions,
   ParsedPrice,
   JsonSchema,
 } from '@skillzmarket/sdk/creator';
@@ -242,8 +267,15 @@ const skills: Skill[] = await market.search('AI', filters);
 ### Typed Creator
 
 ```typescript
-import { skill, serve } from '@skillzmarket/sdk/creator';
+import { skill, serve, checkConfig } from '@skillzmarket/sdk/creator';
 import type { SkillOptions, ServeOptions } from '@skillzmarket/sdk/creator';
+
+// Check configuration
+const config = checkConfig();
+if (!config.configured) {
+  console.error('Issues:', config.issues);
+  process.exit(1);
+}
 
 interface MyInput {
   text: string;

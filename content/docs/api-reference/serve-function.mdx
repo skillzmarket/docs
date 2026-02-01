@@ -45,7 +45,8 @@ serve({ echo, upper });
 ```typescript
 interface ServeOptions {
   port?: number;
-  wallet?: Hex;
+  wallet?: string;
+  apiKey?: string;
   network?: `${string}:${string}`;
   facilitatorUrl?: string;
   appName?: string;
@@ -60,7 +61,8 @@ interface ServeOptions {
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `port` | `number` | `3002` | Server port |
-| `wallet` | `Hex` | `SKILLZ_WALLET_KEY` env | Wallet private key |
+| `wallet` | `string` | `SKILLZ_WALLET_ADDRESS` env | Wallet address (42-char) or private key (66-char) |
+| `apiKey` | `string` | `SKILLZ_API_KEY` env | API key for registration |
 | `network` | `string` | `'eip155:8453'` | Payment network |
 | `facilitatorUrl` | `string` | `'https://x402.dexter.cash'` | x402 facilitator |
 | `appName` | `string` | `'Skillz Market Skill'` | App name for payments |
@@ -149,6 +151,8 @@ serve({ echo });
 ```typescript
 serve({ echo, translate, summarize }, {
   port: 8080,
+  wallet: '0x4554A88d9e4D1bef5338F65A3Cd335C6A27E5368',
+  apiKey: 'sk_...',
   network: 'eip155:8453',
   appName: 'My AI Skills',
   onCall: (name, input) => {
@@ -169,6 +173,15 @@ serve({ echo, translate, summarize }, {
 ### Production Setup
 
 ```typescript
+import { serve, checkConfig } from '@skillzmarket/sdk/creator';
+
+// Validate configuration
+const config = checkConfig();
+if (!config.configured) {
+  console.error('Run: npx @skillzmarket/sdk init');
+  process.exit(1);
+}
+
 serve(skills, {
   port: parseInt(process.env.PORT || '3002'),
   register: {
@@ -184,22 +197,36 @@ serve(skills, {
 
 ## Wallet Resolution
 
-The wallet is resolved in this order:
+The wallet address is resolved in this order:
 
 1. `options.wallet` parameter
-2. `SKILLZ_WALLET_KEY` environment variable
+2. `SKILLZ_WALLET_ADDRESS` environment variable
+3. `SKILLZ_WALLET_KEY` environment variable (address is derived)
+
+The wallet can be either:
+- A 42-character address: `0x4554A88d9e4D1bef5338F65A3Cd335C6A27E5368`
+- A 66-character private key (address is derived automatically)
 
 ```bash
-# Using environment variable
-SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+# Using environment variable (recommended)
+SKILLZ_WALLET_ADDRESS=0x... npx tsx index.ts
 ```
 
 ```typescript
-// Using parameter (not recommended for production)
+// Using parameter
 serve({ echo }, {
-  wallet: '0x...',
+  wallet: '0x4554A88d9e4D1bef5338F65A3Cd335C6A27E5368',
 });
 ```
+
+## API Key Resolution
+
+The API key is resolved in this order:
+
+1. `options.apiKey` parameter
+2. `SKILLZ_API_KEY` environment variable
+
+Get an API key from [skillz.market/dashboard](https://skillz.market/dashboard).
 
 ## Error Handling
 

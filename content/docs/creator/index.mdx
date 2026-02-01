@@ -7,6 +7,19 @@ description: Create and monetize your AI skills with the Creator API.
 
 The Creator API lets you build monetized AI skills with zero crypto knowledge. Define your skills, set prices, and start earning.
 
+## Getting Started
+
+The fastest way to get started is with the interactive setup:
+
+```bash
+npx @skillzmarket/sdk init
+```
+
+This guides you through:
+1. Getting an API key from [skillz.market/dashboard](https://skillz.market/dashboard)
+2. Configuring your wallet address for receiving payments
+3. Saving to `.env`
+
 ## Overview
 
 ```typescript
@@ -21,13 +34,18 @@ const summarize = skill({
 });
 
 // Serve them
-serve({ summarize });
+serve({ summarize }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+  },
+});
 ```
 
 Run with:
 
 ```bash
-SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+npx tsx index.ts
 ```
 
 ## Key Functions
@@ -37,13 +55,29 @@ SKILLZ_WALLET_KEY=0x... npx tsx index.ts
 | `skill(options, handler)` | Define a monetized skill |
 | `serve(skills, options?)` | Start the skill server |
 | `register(skills, options)` | Register skills with marketplace |
+| `init()` | Interactive CLI setup |
+| `checkConfig()` | Validate SDK configuration |
 
 ## How It Works
 
-1. **Define** - Use `skill()` to create skill definitions with pricing
-2. **Serve** - Use `serve()` to start an x402-protected server
-3. **Register** - Optionally register with Skillz Market for discovery
-4. **Earn** - Receive USDC directly to your wallet on each call
+1. **Setup** - Get an API key from the dashboard (one-time wallet signature)
+2. **Define** - Use `skill()` to create skill definitions with pricing
+3. **Serve** - Use `serve()` to start an x402-protected server
+4. **Register** - Skills are automatically registered with Skillz Market
+5. **Earn** - Receive USDC directly to your wallet on each call
+
+## Authentication
+
+The SDK uses **API key authentication** for registration:
+
+- Sign once in the [dashboard](https://skillz.market/dashboard) to create your account
+- Create an API key in the "API Keys" section
+- Use the API key in your SDK - no private key needed for serving!
+
+Benefits:
+- No private key stored in your skill server
+- Rotate/revoke keys anytime
+- Same security (wallet verified at account creation)
 
 ## Quick Example
 
@@ -76,6 +110,37 @@ serve({ echo, uppercase }, {
 });
 ```
 
+## Configuration Helpers
+
+### init()
+
+Interactive CLI setup:
+
+```bash
+npx @skillzmarket/sdk init
+```
+
+Or programmatically:
+
+```typescript
+import { init } from '@skillzmarket/sdk/creator';
+await init();
+```
+
+### checkConfig()
+
+Validate your configuration:
+
+```typescript
+import { checkConfig } from '@skillzmarket/sdk/creator';
+
+const config = checkConfig();
+if (!config.configured) {
+  console.error('Issues:', config.issues);
+  process.exit(1);
+}
+```
+
 ## Server Output
 
 When you run your server, you'll see:
@@ -94,6 +159,14 @@ When you run your server, you'll see:
          Echoes input back
     POST /uppercase - 0.0005 USDC
          Converts text to uppercase
+
+==================================================
+
+  Registering skills with Skillz Market...
+
+  ✓ Registered skills:
+    - echo (echo-abc123)
+    - uppercase (uppercase-def456)
 
 ==================================================
 ```

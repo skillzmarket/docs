@@ -7,6 +7,44 @@ description: Register your skills with the Skillz Market for discovery.
 
 Register your skills with the Skillz Market so users can discover them.
 
+## Getting an API Key
+
+Before registering skills, you need an API key:
+
+1. Go to [skillz.market/dashboard](https://skillz.market/dashboard)
+2. Connect your wallet and sign to authenticate (one-time)
+3. Navigate to the "API Keys" section
+4. Click "Create Key" and save it securely
+
+Or use the interactive setup:
+
+```bash
+npx @skillzmarket/sdk init
+```
+
+## Configuration
+
+Set your API key and wallet address:
+
+```bash
+# In .env file
+SKILLZ_API_KEY=sk_...
+SKILLZ_WALLET_ADDRESS=0x...
+```
+
+Or pass them directly:
+
+```typescript
+serve({ echo }, {
+  apiKey: 'sk_...',
+  wallet: '0x...',
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+  },
+});
+```
+
 ## Auto-Registration via serve()
 
 The easiest way is to enable auto-registration in `serve()`:
@@ -20,7 +58,7 @@ serve({ summarize, translate }, {
 });
 ```
 
-When the server starts, skills are automatically registered.
+When the server starts, skills are automatically registered using your API key.
 
 ## Manual Registration
 
@@ -32,8 +70,9 @@ import { skill, register } from '@skillzmarket/sdk/creator';
 const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
 
 const results = await register({ echo }, {
+  apiKey: process.env.SKILLZ_API_KEY!,
+  paymentAddress: process.env.SKILLZ_WALLET_ADDRESS!,
   endpoint: 'https://your-server.com',
-  apiUrl: 'https://api.skillz.market',
 });
 
 for (const result of results) {
@@ -62,6 +101,8 @@ The public URL where your skills are accessible:
 
 ```typescript
 register({ echo }, {
+  apiKey: 'sk_...',
+  paymentAddress: '0x...',
   endpoint: 'https://api.example.com',
   // Skills will be registered as:
   // POST https://api.example.com/echo
@@ -111,12 +152,18 @@ console.log(`Registered ${successful.length}/${results.length} skills`);
 
 ## Authentication
 
-Registration requires wallet authentication. The SDK handles this automatically using the same wallet used for receiving payments.
+Registration uses **API key authentication**:
 
 ```bash
-# Same wallet used for both payments and registration
-SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+# Set in environment
+SKILLZ_API_KEY=sk_...
+SKILLZ_WALLET_ADDRESS=0x...
 ```
+
+Benefits over wallet signing:
+- No private key needed in your skill server
+- Can rotate/revoke keys anytime
+- Same security (wallet ownership verified when creating account)
 
 ## Server Output
 
@@ -168,6 +215,14 @@ serve({ echo, summarize }, {
   },
 });
 ```
+
+## API Key Security
+
+- Store API keys securely (environment variables, secrets manager)
+- Never commit API keys to source control
+- Add `.env` to `.gitignore`
+- Use separate keys for development/production
+- Rotate keys if compromised via the dashboard
 
 ## Next Steps
 

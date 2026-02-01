@@ -40,18 +40,35 @@ The SDK provides two entry points:
 import { SkillzMarket } from '@skillzmarket/sdk';
 
 // Creator API - for creating monetized skills
-import { skill, serve } from '@skillzmarket/sdk/creator';
+import { skill, serve, init, checkConfig } from '@skillzmarket/sdk/creator';
 ```
 
-## Environment Setup
+## Creator Setup
 
-For creators, set your wallet private key:
+For creators, run the interactive setup wizard:
 
 ```bash
-export SKILLZ_WALLET_KEY=0x...your-private-key
+npx @skillzmarket/sdk init
 ```
 
-For consumers, you'll pass the wallet to the SDK constructor (see [Quick Start](/docs/getting-started/quick-start)).
+This will guide you through:
+1. Getting an API key from [skillz.market/dashboard](https://skillz.market/dashboard)
+2. Configuring your wallet address for receiving payments
+3. Saving to `.env`
+
+Or manually set environment variables:
+
+```bash
+# API key for registration
+export SKILLZ_API_KEY=sk_...
+
+# Wallet address for receiving payments
+export SKILLZ_WALLET_ADDRESS=0x...
+```
+
+## Consumer Setup
+
+For consumers, you'll pass your wallet private key to the SDK constructor (see [Quick Start](/docs/getting-started/quick-start)).
 
 ## Next Steps
 

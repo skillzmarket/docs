@@ -14,13 +14,18 @@ import { skill, serve } from '@skillzmarket/sdk/creator';
 
 const echo = skill({ price: '$0.001' }, async (input) => ({ echo: input }));
 
-serve({ echo });
+serve({ echo }, {
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+  },
+});
 ```
 
-Run with your wallet key:
+Run your server:
 
 ```bash
-SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+npx tsx index.ts
 ```
 
 ## Serve Options
@@ -28,7 +33,8 @@ SKILLZ_WALLET_KEY=0x... npx tsx index.ts
 ```typescript
 interface ServeOptions {
   port?: number;               // Default: 3002
-  wallet?: Hex;                // Or use SKILLZ_WALLET_KEY env
+  wallet?: string;             // Address (42-char) or private key (66-char)
+  apiKey?: string;             // API key for registration
   network?: string;            // Default: 'eip155:8453'
   facilitatorUrl?: string;     // Default: 'https://x402.dexter.cash'
   appName?: string;            // Default: 'Skillz Market Skill'
@@ -50,18 +56,39 @@ serve({ echo }, {
 
 ### Wallet Configuration
 
-Pass the wallet directly or use the environment variable:
+The wallet address is used for receiving payments. You can pass:
+- A 42-character address: `0x4554A88d9e4D1bef5338F65A3Cd335C6A27E5368`
+- A 66-character private key (address is derived): `0x1234...`
 
 ```typescript
 // Option 1: Environment variable (recommended)
-// SKILLZ_WALLET_KEY=0x... npx tsx index.ts
+// SKILLZ_WALLET_ADDRESS=0x... npx tsx index.ts
 serve({ echo });
 
-// Option 2: Pass directly (not recommended for production)
+// Option 2: Pass directly
 serve({ echo }, {
-  wallet: '0x...',
+  wallet: '0x4554A88d9e4D1bef5338F65A3Cd335C6A27E5368',
 });
 ```
+
+**Note:** Private keys are no longer required for serving skills. The SDK only needs your wallet address to receive payments.
+
+### API Key Configuration
+
+API keys authenticate registration requests:
+
+```typescript
+// Option 1: Environment variable (recommended)
+// SKILLZ_API_KEY=sk_... npx tsx index.ts
+serve({ echo });
+
+// Option 2: Pass directly
+serve({ echo }, {
+  apiKey: 'sk_...',
+});
+```
+
+Get an API key from [skillz.market/dashboard](https://skillz.market/dashboard).
 
 ### Network Configuration
 
@@ -184,7 +211,15 @@ See [Registration](/docs/creator/registration) for details.
 ## Example: Production Setup
 
 ```typescript
-import { skill, serve } from '@skillzmarket/sdk/creator';
+import { skill, serve, checkConfig } from '@skillzmarket/sdk/creator';
+
+// Validate configuration
+const config = checkConfig();
+if (!config.configured) {
+  console.error('Configuration issues:', config.issues);
+  console.error('Run: npx @skillzmarket/sdk init');
+  process.exit(1);
+}
 
 // Define skills
 const summarize = skill({
@@ -220,6 +255,14 @@ serve({ summarize, translate }, {
   },
 });
 ```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `SKILLZ_API_KEY` | API key for registration |
+| `SKILLZ_WALLET_ADDRESS` | Wallet address for receiving payments |
+| `SKILLZ_WALLET_KEY` | Private key (legacy, address is derived) |
 
 ## Next Steps
 
