@@ -1,0 +1,203 @@
+---
+title: Authentication
+description: How to authenticate with Skillz Market using wallets or social login.
+---
+
+# Authentication
+
+Skillz Market supports multiple authentication methods to make it easy for anyone to get started.
+
+## Login Options
+
+### Wallet Login
+
+Connect directly with your existing crypto wallet:
+
+- **MetaMask**
+- **Coinbase Wallet**
+- **WalletConnect** (supports 300+ wallets)
+- **Rainbow**
+- **And more...**
+
+Your wallet address becomes your account identifier.
+
+### Social Login
+
+Sign in without a crypto wallet:
+
+- **Google**
+- **Twitter/X**
+- **Discord**
+
+When you use social login, Skillz Market automatically creates an **embedded wallet** for you. This wallet is:
+- Linked to your social account
+- Used for receiving payments (if you're a creator)
+- Can be exported if needed
+
+---
+
+## How Authentication Works
+
+### Web Dashboard
+
+1. Click **Login** in the header
+2. Choose wallet or social login
+3. Complete the authentication flow
+4. You're logged in with a session cookie
+
+Sessions last 7 days and automatically refresh.
+
+### SDK Authentication
+
+The SDK uses your wallet's private key directly:
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket({
+  wallet: process.env.SKILLZ_PRIVATE_KEY,
+});
+
+// Authenticate for feedback/reviews
+await market.authenticate();
+```
+
+Authentication is required for:
+- Submitting reviews
+- Rating skills
+
+Not required for:
+- Searching skills
+- Calling skills (payment handles auth)
+- Viewing skill details
+
+---
+
+## Embedded Wallets
+
+When you sign in with Google, Twitter, or Discord:
+
+1. Skillz Market (via Privy) creates an embedded wallet
+2. The wallet is secured by your social login
+3. You can use this wallet to receive payments as a creator
+4. The wallet address is shown in your dashboard
+
+### Exporting Your Embedded Wallet
+
+If you want to use your embedded wallet elsewhere:
+
+1. Go to your dashboard
+2. Click on your profile
+3. Select "Export Wallet"
+4. Follow the security prompts
+
+---
+
+## Sessions & Tokens
+
+### Access Tokens
+
+- Valid for 1 hour
+- Stored in HTTP-only cookie
+- Automatically refreshed
+
+### Refresh Tokens
+
+- Valid for 7 days
+- Used to get new access tokens
+- Stored in HTTP-only cookie with `/auth` path
+
+### API Keys
+
+For programmatic access without interactive login:
+
+1. Log in to the dashboard
+2. Go to the **API Keys** tab
+3. Create a new key
+4. Use in `Authorization: Bearer sk_...` header
+
+API keys are:
+- Prefixed with `sk_` (creator) or `ck_` (consumer)
+- Revocable at any time
+- Tied to your account
+
+---
+
+## Authentication Flow
+
+```
+User                    Frontend                API
+  |                        |                      |
+  |-- Click Login -------->|                      |
+  |                        |-- Privy Auth ------->|
+  |<-- Privy Token --------|                      |
+  |                        |-- POST /auth/privy ->|
+  |                        |<-- JWT + Cookies ----|
+  |                        |                      |
+  |-- Make API Request --->|                      |
+  |                        |-- Request + Cookie ->|
+  |                        |<-- Response ---------|
+```
+
+---
+
+## Switching Auth Methods
+
+You can link multiple auth methods to the same account:
+
+1. Log in with your current method
+2. Go to Settings
+3. Link additional login methods
+
+This lets you use Google on your phone and MetaMask on desktop, both accessing the same account.
+
+---
+
+## Security
+
+### What We Store
+
+- Your wallet address (public)
+- Encrypted session tokens
+- API key hashes (not the actual keys)
+
+### What We Don't Store
+
+- Private keys (never sent to us)
+- Social login passwords (handled by providers)
+- Full API keys (only prefixes for identification)
+
+### Best Practices
+
+1. Use unique, strong passwords for social accounts
+2. Enable 2FA on your wallet if supported
+3. Regularly rotate API keys
+4. Review active sessions in settings
+
+---
+
+## Troubleshooting
+
+### "Authentication failed"
+
+- Clear cookies and try again
+- Check if your wallet is locked
+- Try a different browser
+
+### "Session expired"
+
+- Refresh the page to get a new token
+- If issues persist, log out and back in
+
+### Wallet Not Connecting
+
+- Ensure your wallet extension is unlocked
+- Check if the site is allowed in wallet settings
+- Try disconnecting and reconnecting
+
+---
+
+## Next Steps
+
+- [Spending Wallets](/docs/consumer/wallet) - Set up a wallet for calling skills
+- [API Keys](/docs/api-reference/auth) - Create programmatic access keys

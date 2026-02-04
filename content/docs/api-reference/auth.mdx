@@ -1,0 +1,250 @@
+---
+title: Authentication API
+description: REST API endpoints for authentication, including Privy OAuth, wallet signatures, and API keys.
+---
+
+# Authentication API
+
+The Skillz Market API supports three authentication methods to cover different use cases.
+
+## Authentication Methods
+
+| Method | Use Case | Header Format |
+|--------|----------|---------------|
+| **Privy** | Web dashboard (social + wallet login) | `Authorization: Bearer <privy-token>` |
+| **Wallet Signature** | Legacy wallet-only auth | `Authorization: Bearer <jwt>` |
+| **API Key** | SDK and programmatic access | `Authorization: Bearer sk_...` |
+
+---
+
+## Privy Authentication
+
+Social login users (Google, Twitter, Discord) and wallet users authenticate through Privy.
+
+### POST /auth/privy
+
+Exchange a Privy access token for a Skillz Market JWT.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/auth/privy \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <privy-access-token>"
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "creator": {
+    "id": "uuid",
+    "walletAddress": "0x...",
+    "name": null,
+    "avatar": null,
+    "bio": null
+  },
+  "expiresIn": 3600
+}
+```
+
+The response also sets HTTP-only cookies:
+- `skillz_token` - Access token (1 hour)
+- `skillz_refresh` - Refresh token (7 days)
+
+---
+
+## Wallet Signature Authentication
+
+Direct wallet authentication without Privy.
+
+### POST /auth/challenge
+
+Get a challenge message to sign with your wallet.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/auth/challenge \
+  -H "Content-Type: application/json" \
+  -d '{"address": "0x..."}'
+```
+
+**Response:**
+```json
+{
+  "message": "Sign this message to authenticate with Skillz Market.\n\nNonce: abc123...\nTimestamp: 2024-01-01T00:00:00Z"
+}
+```
+
+### POST /auth/verify
+
+Verify a signed challenge message.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/auth/verify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x...",
+    "signature": "0x..."
+  }'
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "creator": {
+    "id": "uuid",
+    "walletAddress": "0x...",
+    "name": null
+  },
+  "expiresIn": 3600
+}
+```
+
+---
+
+## Token Refresh
+
+### POST /auth/refresh
+
+Refresh an expired access token using the refresh token cookie.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/auth/refresh \
+  -H "Cookie: skillz_refresh=..."
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "expiresIn": 3600
+}
+```
+
+---
+
+## Logout
+
+### POST /auth/logout
+
+Revoke the current session and clear cookies.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/auth/logout \
+  -H "Cookie: skillz_token=...; skillz_refresh=..."
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## API Keys
+
+API keys provide programmatic access without wallet signing on each request. Keys are prefixed with `sk_` for creator keys and `ck_` for consumer keys.
+
+### POST /auth/api-keys
+
+Create a new API key.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/auth/api-keys \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Production Key"}'
+```
+
+**Response:**
+```json
+{
+  "key": "sk_live_abc123...",
+  "keyPrefix": "sk_live_abc",
+  "name": "Production Key",
+  "warning": "Store this key securely. It will not be shown again."
+}
+```
+
+### GET /auth/api-keys
+
+List all API keys for the authenticated user.
+
+**Request:**
+```bash
+curl https://api.skillz.market/auth/api-keys \
+  -H "Authorization: Bearer <jwt>"
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "uuid",
+    "key": "sk_live_abc123...",
+    "keyPrefix": "sk_live_abc",
+    "name": "Production Key",
+    "lastUsedAt": "2024-01-01T00:00:00Z",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+### DELETE /auth/api-keys/:id
+
+Revoke an API key.
+
+**Request:**
+```bash
+curl -X DELETE https://api.skillz.market/auth/api-keys/uuid \
+  -H "Authorization: Bearer <jwt>"
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## Using API Keys
+
+Once you have an API key, use it in the `Authorization` header:
+
+```bash
+curl https://api.skillz.market/skills \
+  -H "Authorization: Bearer sk_live_abc123..."
+```
+
+API keys can be used for:
+- Registering and updating skills
+- Managing skill groups
+- Any endpoint that requires creator authentication
+
+---
+
+## Error Responses
+
+All authentication endpoints return standard error responses:
+
+```json
+{
+  "error": "Invalid token"
+}
+```
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 401 | `Invalid token` | Token is malformed or expired |
+| 401 | `Authentication required` | No authentication provided |
+| 403 | `API key revoked` | Key has been revoked |
+| 429 | `Rate limit exceeded` | Too many requests |

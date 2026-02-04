@@ -1,0 +1,233 @@
+---
+title: Wallet API
+description: REST API endpoints for managing spending wallets.
+---
+
+# Wallet API
+
+Spending wallets are self-custody wallets for calling skills. Users generate keypairs client-side, and only the public address is registered with the API.
+
+## Overview
+
+Spending wallets enable:
+- **Fiat users** to deposit USDC and call skills
+- **Self-custody** - private keys never touch the server
+- **Multiple wallets** - generate new wallets while keeping history
+
+---
+
+## Register Wallet
+
+### POST /wallet/generate
+
+Register a new spending wallet address.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/wallet/generate \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x...",
+    "label": "My SDK Wallet"
+  }'
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `address` | string | Yes | Ethereum address (0x...) |
+| `label` | string | No | User-friendly name |
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "address": "0x...",
+  "label": "My SDK Wallet",
+  "createdAt": "2024-01-01T00:00:00Z"
+}
+```
+
+---
+
+## Get Active Wallet
+
+### GET /wallet
+
+Get the user's active spending wallet with on-chain USDC balance.
+
+**Request:**
+```bash
+curl https://api.skillz.market/wallet \
+  -H "Authorization: Bearer <jwt>"
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "address": "0x...",
+  "label": "My SDK Wallet",
+  "balance": "10.50",
+  "balanceUsd": 10.50,
+  "createdAt": "2024-01-01T00:00:00Z",
+  "lastUsedAt": "2024-01-15T00:00:00Z"
+}
+```
+
+The `balance` field is the real-time USDC balance on Base network, fetched from the blockchain.
+
+**Returns `null`** if the user has no active wallet.
+
+---
+
+## List All Wallets
+
+### GET /wallet/all
+
+List all spending wallets including revoked ones.
+
+**Request:**
+```bash
+curl https://api.skillz.market/wallet/all \
+  -H "Authorization: Bearer <jwt>"
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "uuid-1",
+    "address": "0xactive...",
+    "label": "Current Wallet",
+    "balance": "10.50",
+    "balanceUsd": 10.50,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "lastUsedAt": "2024-01-15T00:00:00Z",
+    "revokedAt": null
+  },
+  {
+    "id": "uuid-2",
+    "address": "0xold...",
+    "label": "Old Wallet",
+    "balance": "0.00",
+    "balanceUsd": 0,
+    "createdAt": "2023-12-01T00:00:00Z",
+    "lastUsedAt": "2023-12-15T00:00:00Z",
+    "revokedAt": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+---
+
+## Update Wallet Label
+
+### PATCH /wallet/:address
+
+Update a wallet's label.
+
+**Request:**
+```bash
+curl -X PATCH https://api.skillz.market/wallet/0x... \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"label": "Production Wallet"}'
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `label` | string \| null | Yes | New label (null to remove) |
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "address": "0x...",
+  "label": "Production Wallet",
+  "balance": "10.50",
+  "balanceUsd": 10.50,
+  "createdAt": "2024-01-01T00:00:00Z",
+  "lastUsedAt": "2024-01-15T00:00:00Z"
+}
+```
+
+---
+
+## Revoke Wallet
+
+### DELETE /wallet/:address
+
+Soft-delete (revoke) a spending wallet.
+
+**Request:**
+```bash
+curl -X DELETE https://api.skillz.market/wallet/0x... \
+  -H "Authorization: Bearer <jwt>"
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+Revoking a wallet:
+- Marks it as `revokedAt` with current timestamp
+- Removes it from the active wallet
+- Does NOT affect funds - the wallet still exists on-chain
+- Keeps history visible in `GET /wallet/all`
+
+---
+
+## Workflow Example
+
+```typescript
+// 1. Generate keypair in browser (client-side)
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+
+const privateKey = generatePrivateKey();
+const account = privateKeyToAccount(privateKey);
+const address = account.address;
+
+// 2. Register address with API
+const response = await fetch('https://api.skillz.market/wallet/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${jwt}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    address,
+    label: 'My Wallet',
+  }),
+});
+
+// 3. Save private key securely (show once to user)
+console.log('Save this private key:', privateKey);
+// Never send privateKey to the server!
+
+// 4. Fund wallet with USDC on Base network
+// User sends USDC to `address`
+
+// 5. Use private key in SDK to call skills
+const market = new SkillzMarket({
+  wallet: privateKey,
+});
+await market.call('skill-slug', { ... });
+```
+
+---
+
+## Error Responses
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | `Address already registered` | Address belongs to another user |
+| 404 | `Wallet not found` | Address not registered for this user |
+| 401 | `Authentication required` | Missing or invalid auth |

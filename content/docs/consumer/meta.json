@@ -1,4 +1,4 @@
 {
   "title": "Consumer API",
-  "pages": ["index", "discovery", "calling-skills"]
+  "pages": ["index", "authentication", "wallet", "discovery", "calling-skills"]
 }

@@ -1,0 +1,213 @@
+---
+title: Analytics API
+description: REST API endpoints for tracking views, calls, and engagement metrics.
+---
+
+# Analytics API
+
+Track skill engagement with views, calls, favorites, and usage analytics.
+
+## Overview
+
+The analytics system tracks:
+- **Views** - When a skill page is viewed
+- **Calls** - When a skill is executed
+- **Favorites** - When users favorite a skill
+- **Revenue** - Total earnings per skill
+
+---
+
+## Track View
+
+### POST /analytics/view
+
+Record a skill page view.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/analytics/view \
+  -H "Content-Type: application/json" \
+  -d '{"skillId": "uuid"}'
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `skillId` | string | Yes | UUID of the skill |
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+Views are deduplicated by IP address within a time window.
+
+---
+
+## Track Call
+
+### POST /analytics/call
+
+Record a skill execution. Typically called by the x402 middleware after successful payment.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/analytics/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "skillId": "uuid",
+    "amount": "0.01"
+  }'
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `skillId` | string | Yes | UUID of the skill |
+| `amount` | string | No | Payment amount in USDC |
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## Track Usage
+
+### POST /analytics/usage
+
+Record detailed usage for consumer balance tracking.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/analytics/usage \
+  -H "Authorization: Bearer <consumer-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "skillId": "uuid",
+    "amount": 1000
+  }'
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `skillId` | string | Yes | UUID of the skill |
+| `amount` | number | Yes | Amount in micro-dollars |
+
+**Response:**
+```json
+{
+  "success": true,
+  "usageId": "uuid"
+}
+```
+
+---
+
+## Toggle Favorite
+
+### POST /analytics/favorite
+
+Toggle favorite status for a skill.
+
+**Request:**
+```bash
+curl -X POST https://api.skillz.market/analytics/favorite \
+  -H "Content-Type: application/json" \
+  -d '{
+    "skillId": "uuid",
+    "action": "add"
+  }'
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `skillId` | string | Yes | UUID of the skill |
+| `action` | string | Yes | `add` or `remove` |
+
+**Response:**
+```json
+{
+  "success": true,
+  "favoriteCount": 42
+}
+```
+
+---
+
+## Get Skill Analytics
+
+### GET /analytics/:skillId
+
+Get analytics for a specific skill.
+
+**Request:**
+```bash
+curl https://api.skillz.market/analytics/uuid
+```
+
+**Response:**
+```json
+{
+  "skillId": "uuid",
+  "callCount": 1234,
+  "viewCount": 5678,
+  "favoriteCount": 89,
+  "totalRevenue": "123.45",
+  "lastCalledAt": "2024-01-15T00:00:00Z",
+  "lastViewedAt": "2024-01-15T12:00:00Z"
+}
+```
+
+---
+
+## Analytics in Skill Responses
+
+When fetching skill details, analytics are included:
+
+```bash
+curl https://api.skillz.market/skills/my-skill
+```
+
+```json
+{
+  "id": "uuid",
+  "slug": "my-skill",
+  "name": "My Skill",
+  "price": "0.01",
+  "currency": "USDC",
+  "callCount": 1234,
+  "viewCount": 5678,
+  "favoriteCount": 89
+}
+```
+
+---
+
+## Dashboard Analytics
+
+Creators can view aggregate analytics for all their skills in the web dashboard:
+- Total calls across all skills
+- Total revenue earned
+- Most popular skills by views/calls
+- Recent activity timeline
+
+---
+
+## Notes
+
+- View tracking uses IP-based deduplication
+- Call tracking is triggered by successful x402 payments
+- Favorite counts are updated in real-time
+- Revenue is calculated from successful skill usage records

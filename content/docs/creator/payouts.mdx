@@ -1,0 +1,191 @@
+---
+title: Payouts
+description: How creators receive payments from skill calls.
+---
+
+# Payouts
+
+When consumers call your skills, you earn USDC. This guide explains how payments flow to creators.
+
+## How Payments Work
+
+### x402 Direct Payments
+
+Most skill calls use x402 protocol for direct peer-to-peer payments:
+
+1. Consumer calls your skill
+2. Your skill returns `402 Payment Required`
+3. Consumer's wallet sends USDC to your payment address
+4. Consumer retries with payment proof
+5. Your skill executes and returns result
+
+**You receive funds instantly** in your wallet.
+
+### Balance-Based Payments
+
+For consumers using the internal balance system:
+
+1. Consumer pre-funds their balance
+2. Consumer calls your skill
+3. Skillz Market treasury handles the x402 payment
+4. You receive funds via batch payout
+
+---
+
+## Payment Address
+
+Your payment address is set per-skill and is where you receive USDC:
+
+```typescript
+import { skill, serve } from '@skillzmarket/sdk/creator';
+
+const mySkill = skill({
+  price: '$0.01',
+}, async (input) => {
+  return { result: 'done' };
+});
+
+serve({ mySkill }, {
+  wallet: '0x...', // Your payment address
+  register: {
+    endpoint: 'https://your-server.com',
+    enabled: true,
+  },
+});
+```
+
+### Setting Payment Address
+
+You can use:
+- A hardware wallet address
+- Any Ethereum address you control
+- Your embedded wallet from social login
+
+All payments are on **Base network** in **USDC**.
+
+---
+
+## Payout Status
+
+For balance-based payments, payouts go through these stages:
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Usage recorded, waiting for batch |
+| `processing` | Transaction submitted to blockchain |
+| `completed` | Funds arrived in your wallet |
+| `failed` | Transaction failed (will be retried) |
+
+Check payout status in your dashboard under the Analytics section.
+
+---
+
+## Payout Timing
+
+### x402 Direct Payments
+
+Instant. As soon as the transaction confirms (~2 seconds on Base).
+
+### Balance-Based Payouts
+
+Batched for gas efficiency:
+- Small amounts accumulate
+- Payouts process when threshold is reached
+- Or on a regular schedule (daily/weekly)
+
+---
+
+## Viewing Earnings
+
+### Dashboard
+
+Your dashboard shows:
+- Total revenue across all skills
+- Revenue per skill
+- Recent payment activity
+
+### API
+
+```bash
+curl https://api.skillz.market/analytics/skill-uuid \
+  -H "Authorization: Bearer sk_..."
+```
+
+Returns:
+```json
+{
+  "totalRevenue": "123.45",
+  "callCount": 1234
+}
+```
+
+---
+
+## Tax Considerations
+
+As a creator earning USDC, you may have tax obligations:
+
+- Keep records of all payouts
+- USDC is treated as income in most jurisdictions
+- Consult a tax professional for your situation
+
+The dashboard provides revenue history for tax reporting.
+
+---
+
+## Fees
+
+### Platform Fee
+
+Skillz Market charges **0%** platform fee during beta.
+
+Future pricing will be announced with advance notice.
+
+### Network Fees
+
+Gas fees on Base are minimal (~$0.001 per transaction) and are:
+- Paid by the consumer for x402 payments
+- Absorbed by the platform for balance-based payouts
+
+---
+
+## Troubleshooting
+
+### Payment Not Received (x402)
+
+1. Check the transaction on [BaseScan](https://basescan.org)
+2. Verify your payment address is correct
+3. Ensure the consumer's payment succeeded
+
+### Payout Pending Too Long
+
+Balance-based payouts may be delayed if:
+- Amount is below threshold
+- Network congestion
+- System maintenance
+
+Check the dashboard for status updates.
+
+### Wrong Payment Address
+
+If you set the wrong address:
+1. Update your skill registration
+2. New payments go to the new address
+3. Previous payments cannot be redirected
+
+---
+
+## Best Practices
+
+1. **Use a dedicated wallet** - Separate from personal funds
+2. **Verify your address** - Test with a small payment first
+3. **Monitor earnings** - Check dashboard regularly
+4. **Secure your wallet** - Use hardware wallet for large amounts
+5. **Keep records** - Export payment history for accounting
+
+---
+
+## Next Steps
+
+- [Defining Skills](/docs/creator/defining-skills) - Set up skill pricing
+- [x402 Payments](/docs/concepts/x402-payments) - Understand the payment protocol

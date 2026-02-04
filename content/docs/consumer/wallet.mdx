@@ -1,0 +1,194 @@
+---
+title: Spending Wallets
+description: Set up a spending wallet to call skills and pay with USDC.
+---
+
+# Spending Wallets
+
+A spending wallet is your dedicated wallet for calling paid skills. It holds USDC on Base network and is used by the SDK to make payments.
+
+## What is a Spending Wallet?
+
+Unlike your main wallet (MetaMask, Coinbase, etc.), a spending wallet is:
+
+- **Dedicated** - Used only for Skillz Market
+- **Self-custody** - You control the private key
+- **Pre-funded** - Load it with USDC before calling skills
+- **SDK-ready** - Works directly with the SDK and MCP server
+
+## Why Use a Spending Wallet?
+
+1. **Security** - Keep your main wallet separate from automated payments
+2. **Budget control** - Only load what you want to spend
+3. **SDK integration** - Private key can be stored in `.env` for automation
+4. **Social login support** - Works even if you signed up with Google/Twitter
+
+---
+
+## Creating a Spending Wallet
+
+### Via Web Dashboard
+
+1. Go to [Dashboard](https://skillz.market/dashboard)
+2. Click the **Wallet** tab
+3. Click **Create Spending Wallet**
+4. **Save your private key immediately** - it's only shown once!
+5. Copy the `.env` format for your SDK setup
+
+### What Happens
+
+When you create a wallet:
+1. A new keypair is generated **in your browser**
+2. Only the public address is sent to our server
+3. The private key is displayed **once** and never stored
+4. If you lose the key, the wallet cannot be recovered
+
+---
+
+## Funding Your Wallet
+
+After creating a wallet, you need to add USDC:
+
+### Option 1: Transfer from Exchange
+
+1. Copy your wallet address from the dashboard
+2. Go to your exchange (Coinbase, Binance, etc.)
+3. Withdraw USDC to Base network
+4. Paste your wallet address
+5. Confirm the withdrawal
+
+### Option 2: Bridge from Another Chain
+
+If you have USDC on Ethereum or another chain:
+
+1. Use [Base Bridge](https://bridge.base.org) or a bridge aggregator
+2. Bridge USDC from your source chain to Base
+3. Send to your spending wallet address
+
+### Option 3: Swap ETH to USDC
+
+If you have ETH on Base:
+
+1. Use [Uniswap](https://app.uniswap.org) or similar DEX
+2. Connect your spending wallet (import the private key)
+3. Swap ETH for USDC
+
+---
+
+## Using with the SDK
+
+Once funded, use your spending wallet with the SDK:
+
+```typescript
+import { SkillzMarket } from '@skillzmarket/sdk';
+
+const market = new SkillzMarket({
+  wallet: process.env.SKILLZ_PRIVATE_KEY, // Your spending wallet key
+});
+
+// Call a skill - payment is automatic
+const result = await market.call('text-to-image', {
+  prompt: 'A sunset over mountains',
+});
+```
+
+### Environment Setup
+
+Add to your `.env` file:
+```bash
+SKILLZ_PRIVATE_KEY=0x...your-private-key
+```
+
+The SDK automatically uses this key for x402 payments.
+
+---
+
+## Using with MCP Server
+
+Configure your MCP client (Claude, etc.) with your spending wallet:
+
+```json
+{
+  "mcpServers": {
+    "skillzmarket": {
+      "command": "npx",
+      "args": ["@skillzmarket/mcp"],
+      "env": {
+        "SKILLZ_PRIVATE_KEY": "0x...your-private-key"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Managing Wallets
+
+### View Balance
+
+Your current balance is shown in the dashboard wallet tab. It's fetched from the Base blockchain in real-time.
+
+### Edit Label
+
+Give your wallet a friendly name:
+1. Click the edit icon next to the label
+2. Enter a name like "Production" or "Testing"
+3. Click Save
+
+### Generate New Wallet
+
+If you lose your private key:
+1. Click **Generate New Wallet**
+2. Confirm you want to revoke the old wallet
+3. Save the new private key
+4. Transfer any remaining funds from the old address
+
+Your old wallet still exists on-chain - only the association is removed.
+
+### View History
+
+Click **Wallet History** to see previously revoked wallets with their addresses and dates.
+
+---
+
+## Security Best Practices
+
+### Do
+
+- Store private key in a secure password manager
+- Use environment variables, never hardcode
+- Start with small amounts to test
+- Keep spending wallet separate from main holdings
+
+### Don't
+
+- Share your private key
+- Store in version control (add `.env` to `.gitignore`)
+- Keep large amounts in spending wallet
+- Use the same wallet for multiple purposes
+
+---
+
+## Troubleshooting
+
+### "Low balance" Warning
+
+Your wallet has less than $1 USDC. Fund it to continue calling skills.
+
+### "Payment failed"
+
+- Check your balance covers the skill price
+- Ensure you're on Base network (not Ethereum mainnet)
+- Verify the private key is correct
+
+### Lost Private Key
+
+Unfortunately, there's no recovery possible. Generate a new wallet and transfer funds from the old address if you have access elsewhere.
+
+---
+
+## Next Steps
+
+- [Calling Skills](/docs/consumer/calling-skills) - Learn to use the SDK
+- [MCP Setup](/docs/mcp/setup) - Configure AI assistant integration
